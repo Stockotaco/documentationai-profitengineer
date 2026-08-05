@@ -73,6 +73,22 @@
         "icon": "wrench",
         "pages": [
           {
+            "group": "Get started",
+            "icon": "rocket",
+            "pages": [
+              {
+                "title": "MCP overview",
+                "path": "mcp/overview",
+                "icon": "info"
+              },
+              {
+                "title": "Connecting",
+                "path": "mcp/connecting",
+                "icon": "plug"
+              }
+            ]
+          },
+          {
             "group": "Tools",
             "icon": "wrench",
             "pages": [
@@ -160,24 +176,6 @@
                 "title": "Incrementality",
                 "path": "mcp/tools/incrementality",
                 "icon": "trending-up"
-              }
-            ]
-          }
-        ],
-        "groups": [
-          {
-            "group": "Get started",
-            "icon": "rocket",
-            "pages": [
-              {
-                "title": "MCP overview",
-                "path": "mcp/overview",
-                "icon": "info"
-              },
-              {
-                "title": "Connecting",
-                "path": "mcp/connecting",
-                "icon": "plug"
               }
             ]
           }
