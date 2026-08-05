@@ -186,6 +186,17 @@
         "icon": "code",
         "groups": [
           {
+            "group": "Get started",
+            "icon": "rocket",
+            "pages": [
+              {
+                "title": "Authenticating",
+                "path": "api-reference/authentication",
+                "icon": "key-round"
+              }
+            ]
+          },
+          {
             "group": "Endpoints",
             "icon": "terminal",
             "openapi": "api-reference/openapi.yaml",

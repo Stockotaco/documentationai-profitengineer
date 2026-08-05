@@ -1,0 +1,161 @@
+---
+title: "Authenticating"
+description: "Send an API key with every REST request, target the right client, and read what the API returns when a credential is wrong."
+---
+
+Every endpoint in this reference takes an API key. There is one accepted form:
+
+```bash
+curl https://api-service-production-4d43.up.railway.app/v1/metrics \
+  -H "Authorization: Bearer secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+```
+
+Keys are issued by your agency rather than self-served. See
+[API keys](/authorization/api-keys) for requesting, scoping, and rotating one.
+
+## The host matters
+
+REST is served on the hostname in the examples above and nowhere else. The branded MCP
+hostname routes MCP and sign-in paths only, so a `/v1/...` request sent there returns
+`404` even though the endpoint exists.
+
+| Surface | Host |
+|---|---|
+| REST (`/v1/...`) | `https://api-service-production-4d43.up.railway.app` |
+| MCP (`/mcp`) | `https://mcp.mythicdata.io` |
+
+<Callout kind="alert">
+  A `404` on a path you can see documented here is almost always the wrong host, not a
+  missing endpoint.
+</Callout>
+
+## Header only
+
+Two credential forms work on the MCP endpoint but not here:
+
+- **`?api_key=` in the query string.** Accepted on `/mcp` paths only, as a fallback for
+  clients that cannot set headers. On `/v1` it is ignored.
+- **A sign-in token.** OAuth access tokens are minted for MCP. The REST API stays
+  API-key-only, so a token that works in your assistant will not work in a script.
+
+<Callout kind="info">
+  The `401` body on `/v1` mentions `'?api_key=secret_xxx'` because that message is shared
+  with the MCP endpoint. On `/v1`, disregard it and send the header.
+</Callout>
+
+## Targeting a client
+
+What a request can reach depends on which kind of key you hold.
+
+<Tabs>
+  <Tab title="Client key" icon="user">
+    Bound to one client. The server derives the client from the key, so you never name
+    one, and the key cannot reach another client's data. Nothing extra to send.
+  </Tab>
+  <Tab title="Agency key" icon="building">
+    Covers every client in the agency, so each request must say which one it means:
+
+    ```bash
+    curl https://api-service-production-4d43.up.railway.app/v1/metrics \
+      -H "Authorization: Bearer secret_..." \
+      -H "X-Client-Id: acme-co"
+    ```
+
+    `X-Client-Id` accepts a client id, slug, or name. Endpoints that support it list it
+    as a parameter.
+  </Tab>
+</Tabs>
+
+## Scopes
+
+A key carries a set of scopes, and each operation in this reference names the one it
+needs in its description. A call the key is not scoped for returns `403` with the
+missing scope named, so you can ask for exactly that rather than guessing.
+
+Start narrow and widen only when something actually fails. See
+[Scopes](/authorization/scopes) for what each one unlocks and
+[How scopes resolve](/authorization/scope-rules) for how they combine.
+
+## What the errors mean
+
+<ExpandableGroup>
+  <Expandable title="401 Missing or invalid credentials">
+    No `Authorization` header, or one that is not a `Bearer` value.
+
+    ```json
+    {
+      "error": "Missing or invalid credentials",
+      "message": "Provide API key as 'Authorization: Bearer secret_xxx' or '?api_key=secret_xxx'"
+    }
+    ```
+  </Expandable>
+  <Expandable title="401 Invalid API key format">
+    The key was read but does not look like a key. A current key is `secret_` followed by
+    32 characters, 39 in total. Truncation in a copy-paste is the usual cause.
+  </Expandable>
+  <Expandable title="401 Invalid or inactive API key">
+    Well-formed, but no live key matches it. It was deleted, or it belongs to another
+    environment.
+  </Expandable>
+  <Expandable title="401 API key expired">
+    Keys can carry an expiry. Ask your agency for a replacement, deploy it, then delete
+    the old one.
+  </Expandable>
+  <Expandable title="403 Permission denied">
+    A valid key that lacks a scope the call needs. The response names it.
+
+    ```json
+    {
+      "error": "Permission denied",
+      "message": "Missing required scopes: metrics:write"
+    }
+    ```
+  </Expandable>
+  <Expandable title="400 Missing target client">
+    An agency key with no `X-Client-Id` header. Client keys never see this.
+  </Expandable>
+  <Expandable title="404 Client not found / 409 Ambiguous client name">
+    `X-Client-Id` matched nothing in the agency, or matched several clients by name. The
+    `409` body lists the ids so you can send one instead.
+  </Expandable>
+  <Expandable title="429 Rate limit exceeded">
+    `retryAfter` is seconds to wait, and `X-RateLimit-Remaining` on every response tells
+    you how close you are. See [Rate limits](/authorization/rate-limits).
+  </Expandable>
+</ExpandableGroup>
+
+## Check your credential
+
+This endpoint needs no scopes, which makes it the cleanest test of the key itself:
+
+<CodeGroup tabs="curl,Python,JavaScript">
+```bash
+curl -i https://api-service-production-4d43.up.railway.app/v1/models \
+  -H "Authorization: Bearer secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+```
+
+```python
+import os, requests
+
+response = requests.get(
+    "https://api-service-production-4d43.up.railway.app/v1/models",
+    headers={"Authorization": f"Bearer {os.environ['MYTHIC_API_KEY']}"},
+    timeout=30,
+)
+response.raise_for_status()
+print(response.json())
+```
+
+```javascript
+const response = await fetch(
+  "https://api-service-production-4d43.up.railway.app/v1/models",
+  { headers: { Authorization: `Bearer ${process.env.MYTHIC_API_KEY}` } },
+);
+if (!response.ok) throw new Error(`${response.status} ${await response.text()}`);
+console.log(await response.json());
+```
+</CodeGroup>
+
+A `200` means the credential is good and anything failing after this is scopes, the
+client, or the request itself. Keep the key in an environment variable rather than in
+source, as in the examples above.
