@@ -7,6 +7,466 @@ info:
 servers:
 - url: https://api-service-production-4d43.up.railway.app
 components:
+  parameters:
+    EmailsClientIdHeader:
+      name: X-Client-Id
+      in: header
+      required: false
+      description: Target client for agency-scoped API keys. Client-scoped keys resolve their own client
+        and may omit this header.
+      schema:
+        type: string
+    ReportsChatId:
+      name: chatId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: studio_chats row id.
+    ReportsMessageId:
+      name: messageId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: chat_messages row id.
+    ReportsReportId:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Report id, report slug, or a synthetic `__draft-<sessionId>` authoring draft id.
+    ReportsSessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Chat session id (globally unique).
+  responses:
+    EmailsForbidden:
+      description: 'Permission denied: the key lacks the `emails:read` scope, cannot access the target
+        client, or the account is deactivated.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailsAuthError'
+    EmailsRateLimited:
+      description: Rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailsAuthError'
+    EmailsToolError:
+      description: The email tool returned an error (bad input, or no client resolved).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailsError'
+    EmailsUnauthorized:
+      description: Missing, invalid, or expired API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailsAuthError'
+    ReportsBadRequest:
+      description: Missing or invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReportsError'
+    ReportsChatStream:
+      description: 'Server-sent events. Every frame is `event: message` with a JSON body of `{ type, data
+        }`. Observed types are thinking, thinking_delta, thinking_end, tool_call_start, tool_call_progress,
+        tool_call_result, content_done, done, and error (with a sanitized user-facing message).'
+      content:
+        text/event-stream:
+          schema:
+            type: string
+    ReportsForbidden:
+      description: Caller is not permitted (wrong tenant, non-staff, or JWT-only endpoint)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReportsError'
+    ReportsNotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReportsError'
+    ReportsServerError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReportsError'
+    ReportsUnauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReportsError'
+  schemas:
+    EmailsAuthError:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+    EmailsEmailList:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailsMessage'
+        count:
+          type: integer
+      required:
+      - emails
+      - count
+    EmailsError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message with any leading `Error:` prefix stripped.
+      required:
+      - error
+    EmailsMessage:
+      type: object
+      description: One email message. `body` is a 240-character snippet on list and search endpoints and
+        the full text on the thread endpoint.
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+          nullable: true
+        direction:
+          type: string
+          description: Message direction, e.g. `inbound` or `outbound`.
+        from:
+          type: string
+          nullable: true
+          description: Sender address.
+        to:
+          type: string
+          nullable: true
+          description: Recipient inbox address.
+        cc:
+          type: array
+          items:
+            type: string
+        subject:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        attachments:
+          type: integer
+          description: Number of attachments on the message.
+        isSeed:
+          type: boolean
+          nullable: true
+        archived:
+          type: boolean
+          nullable: true
+        receivedAt:
+          type: string
+          format: date-time
+          nullable: true
+    EmailsSearchResult:
+      type: object
+      properties:
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailsMessage'
+        count:
+          type: integer
+        query:
+          type: string
+          description: The trimmed query that was executed.
+      required:
+      - emails
+      - count
+      - query
+    EmailsThreadDetail:
+      type: object
+      properties:
+        threadId:
+          type: string
+        subject:
+          type: string
+          nullable: true
+          description: Raw subject of the oldest message in the thread.
+        messageCount:
+          type: integer
+        awaitingReply:
+          type: boolean
+        messages:
+          type: array
+          description: Messages oldest first, with full body text.
+          items:
+            $ref: '#/components/schemas/EmailsMessage'
+      required:
+      - threadId
+      - messageCount
+      - awaitingReply
+      - messages
+    EmailsThreadList:
+      type: object
+      properties:
+        threads:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailsThreadSummary'
+        count:
+          type: integer
+        openCount:
+          type: integer
+          description: Number of returned threads with awaitingReply true.
+        truncated:
+          type: boolean
+          description: True when the 500-message scan cap was hit and older threads may be omitted.
+      required:
+      - threads
+      - count
+      - openCount
+      - truncated
+    EmailsThreadSummary:
+      type: object
+      properties:
+        threadId:
+          type: string
+          description: Thread Message-ID, falling back to the message id when a message has no thread.
+        subject:
+          type: string
+          description: 'Subject of the first message, with leading Re: prefixes stripped; `(no subject)`
+            when empty.'
+        participants:
+          type: array
+          items:
+            type: string
+          description: Union of senders and recorded to/cc addresses across the thread.
+        messageCount:
+          type: integer
+        firstReceivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastReceivedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastDirection:
+          type: string
+        awaitingReply:
+          type: boolean
+          description: True when the latest inbound message is newer than the latest outbound reply.
+        lastSnippet:
+          type: string
+          description: First 160 characters of the latest message body.
+      required:
+      - threadId
+      - subject
+      - participants
+      - messageCount
+      - awaitingReply
+    ReportsChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          description: One of "user" or "assistant".
+        content:
+          type: string
+        sessionId:
+          type: string
+          nullable: true
+        metadata:
+          nullable: true
+          description: Stored message metadata blob.
+        createdAt:
+          type: string
+          format: date-time
+        inputTokens:
+          type: integer
+          nullable: true
+        outputTokens:
+          type: integer
+          nullable: true
+        feedback:
+          nullable: true
+          description: Present on assistant messages only; the caller's own rating, or null.
+          type: object
+          properties:
+            rating:
+              type: string
+              enum:
+              - positive
+              - negative
+            comment:
+              type: string
+              nullable: true
+    ReportsChatMessageFeedback:
+      type: object
+      description: chat_message_feedback row as returned by the upsert.
+      properties:
+        id:
+          type: string
+        messageId:
+          type: string
+        userId:
+          type: string
+        reportId:
+          type: string
+          nullable: true
+        sessionId:
+          type: string
+          nullable: true
+        rating:
+          type: string
+          enum:
+          - positive
+          - negative
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ReportsChatStreamRequest:
+      type: object
+      required:
+      - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          description: The user message for this turn.
+        sessionId:
+          type: string
+        model:
+          type: string
+          description: Override the agent's configured model id.
+        anthropicApiKey:
+          type: string
+        googleApiKey:
+          type: string
+        includeDiscussions:
+          type: boolean
+        reportScreenshot:
+          type: string
+          description: Base64 data URL screenshot of the report.
+        attachments:
+          type: array
+          items:
+            type: string
+          description: User-attached images as base64 data URLs; also handed to generate_image as references.
+        posthogDistinctId:
+          type: string
+        posthogSessionId:
+          type: string
+        clientId:
+          type: string
+          description: Owning client for a `__draft-<sessionId>` session with no report row yet.
+        editReportId:
+          type: string
+          description: Seed the draft from this existing report (edit flow).
+        enabledDocs:
+          type: array
+          items:
+            type: string
+          description: Knowledge document ids this chat may read. Absent = all client docs; [] = none.
+        enabledTools:
+          type: object
+          description: Per-chat opt-in tool augmentation layered on the always-on authoring tools.
+          properties:
+            builtins:
+              type: array
+              items:
+                type: string
+            mcpServerIds:
+              type: array
+              items:
+                type: string
+            skills:
+              type: array
+              items:
+                type: string
+            reportBuilding:
+              type: boolean
+            metrics:
+              type: boolean
+            alerts:
+              type: boolean
+            tasks:
+              type: boolean
+            prompts:
+              type: boolean
+            emails:
+              type: boolean
+            skillsManagement:
+              type: boolean
+            discussions:
+              type: boolean
+            slackKnowledge:
+              type: boolean
+            slackSend:
+              type: boolean
+            imageGen:
+              type: boolean
+            webBrowsing:
+              type: boolean
+            incrementality:
+              type: boolean
+            constraints:
+              type: boolean
+    ReportsError:
+      type: object
+      properties:
+        error:
+          type: string
+    ReportsPromoteResult:
+      type: object
+      description: Result of committing a report's composed source into the monorepo.
+      properties:
+        committed:
+          type: boolean
+        reason:
+          type: string
+          description: Non-error outcome code, e.g. "no_token" (repo sync unconfigured) or "conflict".
+        repo:
+          type: string
+        branch:
+          type: string
+        files:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        commitShas:
+          type: object
+          additionalProperties:
+            type: string
+        error:
+          type: string
+    ReportsSuccess:
+      type: object
+      properties:
+        success:
+          type: boolean
   securitySchemes:
     bearerAuth:
       type: http
@@ -2518,74 +2978,46 @@ paths:
       operationId: streamChatById
       tags:
       - reports
-      summary: Streaming AI chat for a studio chat (Server-Sent Events)
-      description: 'Chat-centric entry point: resolves `studio_chats` by id to its session, owning
-
-        client, working report, and agent, then runs the same `handleChatStream`. A
-
-        chat with no working report streams against `__draft-<session_id>`.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit on the `chatStreamRoutes` router, plus
-
-        assertCallerClientAccess(c, chat.client_id) in the handler. Per-tool API-key
-
-        scope gating is the same as /v1/reports/{reportId}/chat/stream.
-
-        '
+      summary: Stream an AI chat turn for a Studio chat (SSE)
+      description: 'Chat-centric sibling of the report-centric stream, declared in the same route file
+        and mounted at /v1/chats. Required scope: none declared on the route (`dualAuth` + `requireResolvedClient`
+        + `rateLimit` only, plus a caller/client access check against the chat''s owning client). Resolves
+        the chat row to its session, client, working report, and agent, then runs the same handler; built-in
+        tool availability is gated per family by the API key''s effective scopes.'
       parameters:
-      - name: chatId
-        in: path
-        required: true
-        schema:
-          type: string
-        description: studio_chats.id.
+      - $ref: '#/components/parameters/ReportsChatId'
       requestBody:
         required: true
-        description: Validated by zValidator("json", chatMessageSchema).
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatStreamRequest'
+              $ref: '#/components/schemas/ReportsChatStreamRequest'
       responses:
         '200':
-          description: SSE stream of chat events (see /v1/reports/{reportId}/chat/stream).
-          content:
-            text/event-stream:
-              schema:
-                type: string
-        '400':
-          description: Request body failed chatMessageSchema validation (zValidator).
+          $ref: '#/components/responses/ReportsChatStream'
+        '402':
+          description: AI credit limit exceeded, monthly AI budget reached, or no provider API key configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportsError'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+                type: object
+                properties:
+                  error:
+                    type: string
+                  balance:
+                    description: Remaining AI credit, when the limit check produced it.
+                  budget:
+                    description: Budget state, when the monthly budget check produced it.
         '403':
-          description: Caller is not authorized for this chat's client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Chat not found.
+          description: Chat not found, or the resolved report is missing
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsError'
         '500':
-          description: Unknown error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/constraints:
     get:
       operationId: diagnoseFunnel
@@ -4341,23 +4773,14 @@ paths:
       tags:
       - emails
       summary: List recent emails
-      description: 'Recent emails for the API key''s resolved client, newest first (by receivedAt).
-
-        Read-only. Requires scope `emails:read` (route-level `requireScope(SCOPES.EMAILS_READ)`).
-
-        Also requires a resolved client (`requireResolvedClient` middleware — agency keys
-
-        select the tenant with the `X-Client-Id` header) and is subject to rate limiting.
-
-        Delegates to `executeEmailTool("list_emails")`.
-
-        '
+      description: Requires scope `emails:read`. Returns the most recent messages in the resolved client's
+        inbox, newest first. Agency API keys select the tenant with the `X-Client-Id` header. Body text
+        is truncated to a 240-character snippet.
       parameters:
       - name: limit
         in: query
         required: false
-        description: Max emails to return. Clamped in the executor to 1..100; defaults to 30 when absent
-          or not a positive finite number.
+        description: Max messages to return. Default 30, clamped to a maximum of 100.
         schema:
           type: integer
           minimum: 1
@@ -4366,7 +4789,7 @@ paths:
       - name: direction
         in: query
         required: false
-        description: Filter by message direction. Any other value is ignored (no filter applied).
+        description: Restrict to one direction. Any other value is ignored and both directions are returned.
         schema:
           type: string
           enum:
@@ -4375,187 +4798,129 @@ paths:
       - name: include_archived
         in: query
         required: false
-        description: Pass the literal string `true` to include archived emails. Anything else restricts
-          to `archived = false`.
+        description: Pass the literal string `true` to include archived messages. Anything else excludes
+          them.
         schema:
           type: string
           enum:
           - 'true'
           - 'false'
-      - $ref: '#/components/parameters/XClientId'
+      - $ref: '#/components/parameters/EmailsClientIdHeader'
       responses:
         '200':
-          description: Emails for the resolved client.
+          description: Matching messages
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  emails:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/EmailMessageSnippet'
-                  count:
-                    type: integer
-                    description: Number of emails in `emails`.
+                $ref: '#/components/schemas/EmailsEmailList'
         '400':
-          description: Executor error (returned with the error payload, e.g. no client selected or a query
-            failure).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailError'
+          $ref: '#/components/responses/EmailsToolError'
+        '401':
+          $ref: '#/components/responses/EmailsUnauthorized'
+        '403':
+          $ref: '#/components/responses/EmailsForbidden'
+        '429':
+          $ref: '#/components/responses/EmailsRateLimited'
   /v1/emails/search:
     get:
       operationId: searchEmails
       tags:
       - emails
-      summary: Search emails by subject or body
-      description: 'Case-insensitive substring match (`ILIKE %query%`) against subject OR body text,
-
-        scoped to the resolved client, newest first. Requires scope `emails:read`
-
-        (route-level `requireScope(SCOPES.EMAILS_READ)`), a resolved client, and is rate
-
-        limited. Delegates to `executeEmailTool("search_emails")`.
-
-        '
+      summary: Keyword-search emails
+      description: Requires scope `emails:read`. Case-insensitive substring match against message subject
+        or body text, newest first. Archived messages are not excluded by this endpoint. A missing or
+        blank `query` returns a 400 tool error.
       parameters:
       - name: query
         in: query
-        required: false
-        description: 'Search string. Not validated at the route — a missing or blank value reaches the
-
-          executor, which returns HTTP 400 with `{"error":"query is required"}`.
-
-          '
+        required: true
+        description: Substring matched against subject and body text.
         schema:
           type: string
       - name: limit
         in: query
         required: false
-        description: Max matches to return. Clamped in the executor to 1..50; defaults to 20 when absent
-          or not a positive finite number.
+        description: Max messages to return. Default 20, clamped to a maximum of 50.
         schema:
           type: integer
           minimum: 1
           maximum: 50
           default: 20
-      - $ref: '#/components/parameters/XClientId'
+      - $ref: '#/components/parameters/EmailsClientIdHeader'
       responses:
         '200':
-          description: Matching emails.
+          description: Matching messages
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  emails:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/EmailMessageSnippet'
-                  count:
-                    type: integer
-                  query:
-                    type: string
-                    description: The trimmed query that was executed.
+                $ref: '#/components/schemas/EmailsSearchResult'
         '400':
-          description: Missing/blank `query`, or another executor error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailError'
+          $ref: '#/components/responses/EmailsToolError'
+        '401':
+          $ref: '#/components/responses/EmailsUnauthorized'
+        '403':
+          $ref: '#/components/responses/EmailsForbidden'
+        '429':
+          $ref: '#/components/responses/EmailsRateLimited'
   /v1/emails/thread:
     get:
       operationId: getEmailThread
       tags:
       - emails
-      summary: Get a full email thread
-      description: 'Full conversation for one thread, oldest message first, with full body text (not
-
-        snippets) and the `awaitingReply` open/closed heuristic. `threadId` is a Message-ID
-
-        such as `<id@domain>`; it is a query param rather than a path segment to avoid
-
-        encoding its angle brackets and slashes. Requires scope `emails:read` (route-level
-
-        `requireScope(SCOPES.EMAILS_READ)`), a resolved client, and is rate limited.
-
-        Delegates to `executeEmailTool("get_email_thread")`.
-
-        '
+      summary: Get one email thread with full message bodies
+      description: Requires scope `emails:read`. `threadId` is a Message-ID such as `<id@domain>`; it
+        is passed as a query parameter rather than a path segment to avoid encoding problems with its
+        angle brackets and slashes. Messages are returned oldest first with full body text. A missing
+        `threadId` returns 400; an unknown one returns 404.
       parameters:
       - name: threadId
         in: query
         required: true
-        description: Thread identifier (Message-ID). Missing value returns HTTP 400 from the route itself.
+        description: Message-ID of the conversation, e.g. `<abc123@example.com>`.
         schema:
           type: string
-      - $ref: '#/components/parameters/XClientId'
+      - $ref: '#/components/parameters/EmailsClientIdHeader'
       responses:
         '200':
-          description: The thread and its messages.
+          description: The full conversation
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  threadId:
-                    type: string
-                  subject:
-                    type: string
-                    nullable: true
-                    description: Raw subject of the earliest message in the thread.
-                  messageCount:
-                    type: integer
-                  awaitingReply:
-                    type: boolean
-                    description: True when the latest inbound message is newer than the latest outbound
-                      one, or there is no outbound reply.
-                  messages:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/EmailMessageFull'
+                $ref: '#/components/schemas/EmailsThreadDetail'
         '400':
-          description: '`threadId` query param missing (route-level check).'
+          description: '`threadId` query param is required'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EmailError'
+                $ref: '#/components/schemas/EmailsError'
         '404':
-          description: Executor error, including thread not found. Any executor error on this route is
-            returned as 404.
+          description: Thread not found, or the tool failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EmailError'
+                $ref: '#/components/schemas/EmailsError'
+        '401':
+          $ref: '#/components/responses/EmailsUnauthorized'
+        '403':
+          $ref: '#/components/responses/EmailsForbidden'
+        '429':
+          $ref: '#/components/responses/EmailsRateLimited'
   /v1/emails/threads:
     get:
       operationId: listEmailThreads
       tags:
       - emails
       summary: List email threads (triage view)
-      description: 'Thread-level triage view: one row per conversation with participants, first/last
-
-        timestamps, message count and `awaitingReply` (latest inbound newer than our latest
-
-        outbound, or never replied to). Threads are built by grouping at most 500 scanned
-
-        messages; when that cap is hit the oldest threads are omitted and `truncated` is true.
-
-        Requires scope `emails:read` (route-level `requireScope(SCOPES.EMAILS_READ)`), a
-
-        resolved client, and is rate limited. Delegates to
-
-        `executeEmailTool("list_email_threads")`.
-
-        '
+      description: Requires scope `emails:read`. One row per conversation with participants, message count,
+        first/last timestamps and an `awaitingReply` flag marking threads whose latest inbound message
+        is newer than the latest outbound reply. At most 500 messages are scanned when grouping; when
+        that cap is hit the oldest threads are dropped and `truncated` is true. Subjects have leading
+        "Re:" prefixes stripped.
       parameters:
       - name: limit
         in: query
         required: false
-        description: Max threads to return. Clamped in the executor to 1..100; defaults to 25 when absent
-          or not a positive finite number.
+        description: Max threads to return. Default 25, clamped to a maximum of 100.
         schema:
           type: integer
           minimum: 1
@@ -4564,42 +4929,28 @@ paths:
       - name: include_archived
         in: query
         required: false
-        description: Pass the literal string `true` to include archived emails when grouping threads.
-          Anything else restricts to `archived = false`.
+        description: Pass the literal string `true` to include archived messages when grouping threads.
         schema:
           type: string
           enum:
           - 'true'
           - 'false'
-      - $ref: '#/components/parameters/XClientId'
+      - $ref: '#/components/parameters/EmailsClientIdHeader'
       responses:
         '200':
-          description: Threads for the resolved client, most recently active first.
+          description: Thread summaries, newest activity first
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  threads:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/EmailThreadSummary'
-                  count:
-                    type: integer
-                    description: Number of threads in `threads`.
-                  openCount:
-                    type: integer
-                    description: Threads in `threads` with `awaitingReply = true`.
-                  truncated:
-                    type: boolean
-                    description: True when the 500-message scan cap was reached, so older threads may
-                      be missing.
+                $ref: '#/components/schemas/EmailsThreadList'
         '400':
-          description: Executor error.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailError'
+          $ref: '#/components/responses/EmailsToolError'
+        '401':
+          $ref: '#/components/responses/EmailsUnauthorized'
+        '403':
+          $ref: '#/components/responses/EmailsForbidden'
+        '429':
+          $ref: '#/components/responses/EmailsRateLimited'
   /v1/incrementality/coefficients:
     get:
       operationId: getIncrementalityCoefficients
@@ -10747,24 +11098,11 @@ paths:
       tags:
       - reports
       summary: Seed a session draft from an existing report and return a preview URL
-      description: 'Edit-flow bootstrap for the Studio: seeds an authoring draft for `sessionId`
-
-        (optionally copied from `editReportId`) and returns a token-gated preview URL.
-
-
-        Required scope: NONE declared on the route (no requireScope/requireAnyScope).
-
-        Auth is `dualAuth` + `requireResolvedClient` + `rateLimit` from the file''s
-
-        `.use("*", ...)` lines; the handler additionally calls
-
-        assertCallerClientAccess(c, clientId), so a caller may only target a client
-
-        it owns (API key: same client, or same agency for an agency key; JWT:
-
-        platform_admin any, agency_admin own agency, client user own client).
-
-        '
+      description: 'Edit-flow bootstrap for the Studio. Required scope: none declared on the route (this
+        file has no requireScope/requireAnyScope). Access is enforced by the router-wide middleware `dualAuth`
+        + `requireResolvedClient` + `rateLimit`, plus a per-request caller/client access check (platform_admin
+        any client, agency_admin own agency, client user own client; agency API keys own agency, client
+        keys own client).'
       requestBody:
         required: true
         content:
@@ -10777,16 +11115,16 @@ paths:
               properties:
                 clientId:
                   type: string
-                  description: Portal clients.id the draft belongs to.
+                  description: Portal client id the draft belongs to.
                 sessionId:
                   type: string
-                  description: Chat session id the draft is keyed by (`__draft-<sessionId>`).
+                  description: Chat session id the draft is keyed on.
                 editReportId:
                   type: string
-                  description: Existing report to seed the draft from (edit flow).
+                  description: Existing report to seed the draft from.
       responses:
         '200':
-          description: Draft ensured.
+          description: Draft ensured
           content:
             application/json:
               schema:
@@ -10802,57 +11140,25 @@ paths:
                   handEdited:
                     type: boolean
         '400':
-          description: clientId and sessionId are required, or the caller supplied no client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsBadRequest'
         '401':
-          description: Authentication required (JWT caller with no user on the context).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsUnauthorized'
         '403':
-          description: Caller is not authorized for this client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Client not found, or the client has no synced monorepo slug.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: ensure-draft-preview failed.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/authoring/promote:
     post:
       operationId: promoteReportToMonorepo
       tags:
       - reports
       summary: Promote a published portal report into the monorepo as one commit
-      description: 'Composes the report''s source and commits it to the client''s monorepo, then
-
-        flips the portal row''s origin to `promoted`. Refuses drafts (`__draft-` ids)
-
-        and refuses reports whose `sync_status` is `conflict`.
-
-
-        Required scope: NONE declared on the route. Beyond the inherited
-
-        dualAuth / requireResolvedClient / rateLimit middleware, the handler is
-
-        STAFF-GATED via isTrustedAuthor({ keyType, userRole }) and then calls
-
-        assertCallerClientAccess(c, clientId).
-
-        '
+      description: 'Required scope: none declared on the route. Gated by `isTrustedAuthor` (staff / agency
+        key) in the handler, on top of `dualAuth` + `requireResolvedClient` + `rateLimit`, plus the caller/client
+        access check. `reportId` is the report SLUG, never a `__draft-` id. A missing GITHUB_MONOREPO_TOKEN
+        returns 200 with `committed:false, reason:"no_token"`.'
       requestBody:
         required: true
         content:
@@ -10865,77 +11171,40 @@ paths:
               properties:
                 clientId:
                   type: string
-                  description: Portal clients.id.
                 reportId:
                   type: string
-                  description: The report SLUG (not a uuid, and never a `__draft-` id).
+                  description: Report slug to promote.
       responses:
         '200':
-          description: 'Committed, or not configured (`reason: "no_token"`, returned as 200 so the
-
-            Studio can surface the message).
-
-            '
+          description: Promote result (committed, or the unconfigured no_token state)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PromoteResult'
+                $ref: '#/components/schemas/ReportsPromoteResult'
         '400':
-          description: clientId and reportId are required, or the report is still a draft.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsBadRequest'
         '403':
-          description: Promoting a report requires staff access, or the client is out of scope.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Client not found, or no synced monorepo slug for the client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
-        '502':
-          description: Compose or commit failed (a PromoteResult with committed=false).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PromoteResult'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Promote failed.
+          $ref: '#/components/responses/ReportsServerError'
+        '502':
+          description: Compose or commit failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportsError'
+                $ref: '#/components/schemas/ReportsPromoteResult'
   /v1/reports/authoring/resolve-conflict:
     post:
       operationId: resolveReportSyncConflict
       tags:
       - reports
-      summary: Resolve a report's portal/monorepo sync conflict by picking a winner
-      description: '`keep-portal` force-promotes the portal version (and clears the stashed
-
-        monorepo version); `pull-monorepo` discards the portal edit and re-applies the
-
-        stashed monorepo version (falling back to re-reading monorepo HEAD).
-
-
-        Required scope: NONE declared on the route. Inherited dualAuth /
-
-        requireResolvedClient / rateLimit, plus a STAFF gate (isTrustedAuthor) and
-
-        assertCallerClientAccess(c, clientId) in the handler.
-
-        '
+      summary: Resolve a report's portal/monorepo sync conflict
+      description: 'Required scope: none declared on the route. Gated by `isTrustedAuthor` (staff) in
+        the handler, on top of `dualAuth` + `requireResolvedClient` + `rateLimit`, plus the caller/client
+        access check. `keep-portal` force-promotes the portal version; `pull-monorepo` applies the stashed
+        (or re-fetched HEAD) monorepo version to the portal row.'
       requestBody:
         required: true
         content:
@@ -10951,7 +11220,7 @@ paths:
                   type: string
                 reportId:
                   type: string
-                  description: The report SLUG.
+                  description: Report slug.
                 resolution:
                   type: string
                   enum:
@@ -10959,11 +11228,8 @@ paths:
                   - pull-monorepo
       responses:
         '200':
-          description: 'Conflict resolved. `keep-portal` returns the PromoteResult with `resolution`
-
-            merged in; `pull-monorepo` returns the applied-version summary.
-
-            '
+          description: Conflict resolved. `keep-portal` returns the resolution plus the promote result
+            fields; `pull-monorepo` returns the applied spec hash and source.
           content:
             application/json:
               schema:
@@ -10975,7 +11241,7 @@ paths:
                         type: string
                         enum:
                         - keep-portal
-                  - $ref: '#/components/schemas/PromoteResult'
+                  - $ref: '#/components/schemas/ReportsPromoteResult'
                 - type: object
                   properties:
                     resolution:
@@ -10992,43 +11258,16 @@ paths:
                       enum:
                       - stashed
                       - head
-                      description: Whether the applied version came from the stash or from monorepo HEAD.
         '400':
-          description: clientId, reportId, and a valid resolution are required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
-        '401':
-          description: Authentication required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsBadRequest'
         '403':
-          description: Resolving a conflict requires staff access, or the client is out of scope.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Client not found, or no synced monorepo slug for the client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
-        '502':
-          description: 'keep-portal: the force-promote failed. pull-monorepo: the monorepo version
-
-            could not be loaded (no stash and the report server''s checkout is stale).
-
-            '
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Resolve failed.
+          $ref: '#/components/responses/ReportsServerError'
+        '502':
+          description: Could not load the monorepo version, or the force-promote failed
           content:
             application/json:
               schema:
@@ -11038,21 +11277,12 @@ paths:
       operationId: getReportChatDebug
       tags:
       - reports
-      summary: Inspect the compiled system prompt, tools, and agent config for a report chat
-      description: 'Mirrors the stream handler''s prompt assembly (agent template + grounding
-
-        section + report-layout summary + skills section) without running the model.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only. Returns 500 with an `error` body when
-
-        the client''s agency has no AI agent configured.
-
-        '
+      summary: Inspect the compiled system prompt and context for this report's chat
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). Mirrors the stream handler''s prompt assembly so the admin debug view shows
+        exactly what the chat agent would see.'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
       - name: includeDiscussions
         in: query
         required: false
@@ -11060,11 +11290,12 @@ paths:
           type: string
           enum:
           - 'true'
-        description: Compared to the literal string "true"; when set, a `discussions` slot is added to
-          the runtime context.
+          - 'false'
+        description: Compared literally against "true"; when true a discussions slot is added to the runtime
+          context.
       responses:
         '200':
-          description: Debug snapshot.
+          description: Debug payload
           content:
             application/json:
               schema:
@@ -11074,7 +11305,6 @@ paths:
                     type: string
                   reportType:
                     type: string
-                    description: Defaults to "looker_studio" when the report row has none.
                   embedUrl:
                     type: string
                     nullable: true
@@ -11083,7 +11313,6 @@ paths:
                     nullable: true
                   contextMessageCount:
                     type: integer
-                    description: system_settings.chatContextMessages, default 10.
                   tools:
                     type: array
                     items:
@@ -11103,7 +11332,6 @@ paths:
                     type: array
                     items:
                       type: string
-                    description: Empty for posthog reports (the ids move to posthogDashboardIds).
                   posthogDashboardIds:
                     type: array
                     items:
@@ -11113,7 +11341,7 @@ paths:
                     nullable: true
                   posthogInsightsData:
                     nullable: true
-                    description: Parsed from the stored JSON string; null when absent or unparseable.
+                    description: Parsed JSON of the stored insights blob, or null when unparseable.
                   glossaryTerms:
                     type: array
                     items:
@@ -11125,7 +11353,6 @@ paths:
                           type: string
                         definition:
                           type: string
-                          description: Client override applied when one exists.
                   agentName:
                     type: string
                     nullable: true
@@ -11152,11 +11379,9 @@ paths:
                     nullable: true
                   runtimeContext:
                     type: object
-                    description: Template slots (agency_name, client_name, client_description, report_name,
-                      report_description, bigquery_tables, report_queries, glossary_terms, discussions);
-                      values are strings or undefined.
                     additionalProperties:
                       type: string
+                      nullable: true
                   skills:
                     type: array
                     items:
@@ -11170,13 +11395,10 @@ paths:
                           type: string
                           nullable: true
         '404':
-          description: Report not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: No AI agent configured for this agency, or failed to get debug info.
+          description: Failed to build debug info, or no AI agent is configured for the agency (returned
+            as 500 with an error message).
           content:
             application/json:
               schema:
@@ -11186,25 +11408,15 @@ paths:
       operationId: submitReportChatMessageFeedback
       tags:
       - reports
-      summary: Submit or update thumbs up/down on an assistant message
-      description: 'Upserts one feedback row per (messageId, userId). The message must exist and
-
-        belong to the caller; reportId is deliberately NOT part of that lookup.
-
-        JWT-only: an API-key caller gets 403.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only, plus the in-handler `authType === "jwt"` check.
-
-        '
+      summary: Rate an assistant message (upsert one row per user per message)
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). JWT auth is required; an API-key caller gets 403. The message must belong to
+        the calling user. Emits a PostHog chat-feedback event.'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
-      - $ref: '#/components/parameters/MessageIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
+      - $ref: '#/components/parameters/ReportsMessageId'
       requestBody:
         required: true
-        description: Validated by zValidator("json", feedbackSchema).
         content:
           application/json:
             schema:
@@ -11221,128 +11433,61 @@ paths:
                   type: string
       responses:
         '200':
-          description: The stored feedback row (Drizzle `.returning()` on chat_message_feedback).
+          description: Stored feedback row
           content:
             application/json:
               schema:
                 type: object
                 properties:
                   feedback:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                      messageId:
-                        type: string
-                      userId:
-                        type: string
-                        nullable: true
-                      reportId:
-                        type: string
-                        nullable: true
-                        description: Mirrors the MESSAGE's report (null for Studio chats), not the URL
-                          param.
-                      sessionId:
-                        type: string
-                        nullable: true
-                      rating:
-                        type: string
-                        enum:
-                        - positive
-                        - negative
-                      comment:
-                        type: string
-                        nullable: true
-                      createdAt:
-                        type: string
-                        format: date-time
-                      updatedAt:
-                        type: string
-                        format: date-time
+                    $ref: '#/components/schemas/ReportsChatMessageFeedback'
         '400':
-          description: Request body failed feedbackSchema validation (zValidator).
+          description: Request body failed validation
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsError'
         '403':
-          description: JWT auth required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Message not found, or not owned by the caller.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Failed to submit feedback.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
     delete:
       operationId: deleteReportChatMessageFeedback
       tags:
       - reports
-      summary: Remove the caller's feedback on a message
-      description: 'Deletes the (messageId, userId) feedback row. Returns success even when no row
-
-        existed. JWT-only: an API-key caller gets 403.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only, plus the in-handler `authType === "jwt"` check.
-
-        '
+      summary: Remove the caller's rating on a message
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). JWT auth is required; an API-key caller gets 403.'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
-      - $ref: '#/components/parameters/MessageIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
+      - $ref: '#/components/parameters/ReportsMessageId'
       responses:
         '200':
-          description: Deleted.
+          description: Deleted (idempotent)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsSuccess'
         '403':
-          description: JWT auth required.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '500':
-          description: Failed to delete feedback.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/{reportId}/chat/sessions:
     get:
       operationId: listReportChatSessions
       tags:
       - reports
       summary: List the caller's chat sessions for a report
-      description: 'JWT callers get their own sessions, aggregated from `chat_messages` and sorted
-
-        by last message descending. API-key callers always get an empty list
-
-        (API sessions are tracked at client level).
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only.
-
-        '
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). JWT callers get their own sessions aggregated from chat_messages; API-key callers
+        always get an empty list (API sessions live at client level).'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
       responses:
         '200':
-          description: Session list (an empty array for API-key auth).
+          description: Sessions, most recently active first
           content:
             application/json:
               schema:
@@ -11355,7 +11500,6 @@ paths:
                       properties:
                         sessionId:
                           type: string
-                          description: '"default" for messages stored without a session id.'
                         createdAt:
                           type: string
                           format: date-time
@@ -11366,45 +11510,27 @@ paths:
                           type: integer
                         preview:
                           type: string
-                          description: First 100 chars, preferring a user message.
+                          description: First 100 characters of the session's first user message.
         '404':
-          description: Report not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Failed to list sessions.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/{reportId}/chat/sessions/{sessionId}:
     get:
       operationId: getReportChatSession
       tags:
       - reports
       summary: Get the messages of one chat session
-      description: 'Filtered by sessionId + the caller''s own userId, NOT by reportId (Studio chats
-
-        carry report_id = null). Exception: a thread its owner shared is also readable
-
-        by platform_admin, or by an agency_admin of the owning agency
-
-        (isSharedThreadReadableBy). API-key callers always get 404.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only.
-
-        '
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). JWT only; an API-key caller gets 404. Messages are filtered to the calling
+        user unless the thread was explicitly shared and the viewer is platform_admin or an agency_admin
+        of the owning agency.'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
-      - $ref: '#/components/parameters/SessionIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
+      - $ref: '#/components/parameters/ReportsSessionId'
       responses:
         '200':
-          description: The session's messages.
+          description: Session messages in ascending creation order
           content:
             application/json:
               schema:
@@ -11418,221 +11544,91 @@ paths:
                   messages:
                     type: array
                     items:
-                      type: object
-                      properties:
-                        id:
-                          type: string
-                        role:
-                          type: string
-                          description: e.g. "user" | "assistant".
-                        content:
-                          type: string
-                        sessionId:
-                          type: string
-                          nullable: true
-                        metadata:
-                          nullable: true
-                          description: Stored message metadata, passed through verbatim.
-                        createdAt:
-                          type: string
-                          format: date-time
-                        inputTokens:
-                          type: integer
-                          nullable: true
-                        outputTokens:
-                          type: integer
-                          nullable: true
-                        feedback:
-                          nullable: true
-                          description: Present only for assistant messages; omitted otherwise.
-                          type: object
-                          properties:
-                            rating:
-                              type: string
-                              enum:
-                              - positive
-                              - negative
-                            comment:
-                              type: string
-                              nullable: true
+                      $ref: '#/components/schemas/ReportsChatMessage'
         '404':
-          description: Session not found (returned for every API-key caller).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Failed to get session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
     delete:
       operationId: deleteReportChatSession
       tags:
       - reports
-      summary: Delete the caller's messages for a chat session
-      description: 'Deletes `chat_messages` matching reportId + sessionId + the caller''s userId.
-
-        API-key callers get 404.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only.
-
-        '
+      summary: Delete the caller's messages for one chat session
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). JWT only; an API-key caller gets 404. Deletes chat_messages matching this report,
+        session, and user.'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
-      - $ref: '#/components/parameters/SessionIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
+      - $ref: '#/components/parameters/ReportsSessionId'
       responses:
         '200':
-          description: Deleted.
+          description: Deleted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsSuccess'
         '404':
-          description: Session not found (returned for every API-key caller).
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Failed to delete session.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/{reportId}/chat/stream:
     post:
       operationId: streamReportChat
       tags:
       - reports
-      summary: Streaming AI chat for a report (Server-Sent Events)
-      description: 'Report-centric entry point into the shared `handleChatStream`. On success the
-
-        response is an SSE stream (`streamSSE`), not JSON: each frame is an
-
-        `event: message` whose `data` is a JSON object with a `type` discriminator
-
-        (including `type: "error"` with `{ message }` for a mid-stream failure).
-
-        `reportId` may be a real report id or a synthetic `__draft-<sessionId>` Studio
-
-        id; a draft requires `clientId` in the body and re-checks tenant access.
-
-
-        Required scope: NONE declared on the route — dualAuth /
-
-        requireResolvedClient / rateLimit only. Scope enforcement is PER TOOL for
-
-        API-key callers via chatBuiltinScopeAllowed(): family reads accept
-
-        `<family>:read` or `<family>:write` (glossary, reports, memories,
-
-        bigquery_tables, alerts, metrics, documents, tasks, prompts, skills,
-
-        incrementality), writes require `<family>:write`, Slack reads/sends require
-
-        `slack:read` / `slack:write`, web tools `web:read`, discussion writes
-
-        `discussions:write`, task-proposal decisions `task_proposals:write`, and
-
-        `author_dataform_model` requires `dataform:author`. Unmapped tools are always-on.
-
-        '
+      summary: Stream an AI chat turn for a report (SSE)
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). For API-key callers each built-in tool the agent may call is gated by the key''s
+        effective scopes per family (reports, metrics, alerts, tasks, task_proposals, prompts, skills,
+        documents, memories, glossary, bigquery_tables, slack, web, incrementality, dataform). `reportId`
+        may be a real report id or a synthetic `__draft-<sessionId>` id, in which case `clientId` in the
+        body supplies the context and the caller''s access to that client is verified.'
       parameters:
-      - name: reportId
-        in: path
-        required: true
-        schema:
-          type: string
-        description: A report id, or a synthetic `__draft-<sessionId>` Studio authoring id.
+      - $ref: '#/components/parameters/ReportsReportId'
       requestBody:
         required: true
-        description: Validated by zValidator("json", chatMessageSchema).
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatStreamRequest'
+              $ref: '#/components/schemas/ReportsChatStreamRequest'
       responses:
         '200':
-          description: SSE stream of chat events.
-          content:
-            text/event-stream:
-              schema:
-                type: string
-                description: 'SSE frames, each `event: message` with a JSON `data` payload carrying a
-
-                  `type` field. Individual event payload shapes are produced by
-
-                  lib/pi-sse-bridge.ts (streamAgentToSSE) and are not enumerated here.
-
-                  '
-        '400':
-          description: Request body failed chatMessageSchema validation (zValidator).
+          $ref: '#/components/responses/ReportsChatStream'
+        '402':
+          description: AI credit limit exceeded, monthly AI budget reached, or no provider API key configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ReportsError'
-        '401':
-          description: Authentication required for the draft's client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+                type: object
+                properties:
+                  error:
+                    type: string
+                  balance:
+                    description: Remaining AI credit, when the limit check produced it.
+                  budget:
+                    description: Budget state, when the monthly budget check produced it.
         '403':
-          description: Caller is not authorized for the resolved client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Report not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Setup failed before the stream opened.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/{reportId}/chat/tools:
     get:
       operationId: listReportChatTools
       tags:
       - reports
       summary: List the AI tools available to this report's chat
-      description: 'Returns the client''s DB tools (webhook + MCP-server tools, agency/client
-
-        filtered) plus the role-appropriate built-in tools.
-
-
-        Required scope: NONE declared on the route (dualAuth /
-
-        requireResolvedClient / rateLimit only). For an API-key caller the built-in
-
-        tools are filtered by the key''s effective scopes via
-
-        chatBuiltinScopeAllowed() — each family read needs `<family>:read` OR
-
-        `<family>:write` and each write needs `<family>:write` (e.g. metrics:read /
-
-        metrics:write for list_metrics, reports:write for save_report,
-
-        task_proposals:write for the proposal decisions, dataform:author for
-
-        author_dataform_model). Tools with no scope mapping are always-on.
-
-        '
+      description: 'Required scope: none declared on the route (`dualAuth` + `requireResolvedClient` +
+        `rateLimit` only). For API-key callers the built-in tools are filtered to those the key''s effective
+        scopes allow, per family (e.g. `list_metrics` needs metrics:read or metrics:write, `list_alerts`
+        needs alerts:read or alerts:write, `search_knowledge` needs documents:read or documents:write,
+        Slack sends need slack:write).'
       parameters:
-      - $ref: '#/components/parameters/ReportIdPath'
+      - $ref: '#/components/parameters/ReportsReportId'
       responses:
         '200':
-          description: The tool list.
+          description: Available tools
           content:
             application/json:
               schema:
@@ -11653,57 +11649,26 @@ paths:
                         inputSchema:
                           type: object
                           nullable: true
-                          description: JSON Schema for the tool's arguments (parsed from storage).
                           additionalProperties: true
         '404':
-          description: Report not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '500':
-          description: Failed to fetch tools.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/reports/{reportId}/publish:
     post:
       operationId: publishReportDraft
       tags:
       - reports
       summary: Publish an authoring draft as a client-visible report
-      description: 'Deterministic (no agent): reads the draft''s stored ReportSpec from
-
-        `report_meta.report_spec` and re-composes it published with a real slug.
-
-        `reportId` MUST be a `__draft-<sessionId>` id. If the target report''s origin is
-
-        `promoted`, the regenerated source is re-promoted to the monorepo best-effort
-
-        and reported under `repoSync`.
-
-
-        Required scope: NONE declared on the route. Beyond the inherited dualAuth /
-
-        requireResolvedClient / rateLimit middleware, the handler is STAFF-GATED via
-
-        isTrustedAuthor({ keyType, userRole }) and then calls
-
-        assertCallerClientAccess(c, <draft''s client_id>).
-
-        '
+      description: 'Required scope: none declared on the route. Gated by `isTrustedAuthor` (staff) in
+        the handler, on top of `dualAuth` + `requireResolvedClient` + `rateLimit`, plus the caller/client
+        access check. `reportId` must be a `__draft-<sessionId>` slug. Deterministic re-compose of the
+        draft''s stored ReportSpec; if the target report''s origin is `promoted`, the regenerated source
+        is re-promoted best-effort.'
       parameters:
-      - name: reportId
-        in: path
-        required: true
-        schema:
-          type: string
-        description: The authoring draft id — must start with `__draft-`.
+      - $ref: '#/components/parameters/ReportsReportId'
       requestBody:
         required: false
-        description: Parsed with `c.req.json().catch(() => ({}))`; an absent or invalid body is treated
-          as `{}`.
         content:
           application/json:
             schema:
@@ -11711,14 +11676,15 @@ paths:
               properties:
                 targetReportId:
                   type: string
-                  description: Edit save-back — overwrite this existing report in place instead of creating
+                  description: Edit save-back target; overwrite this report in place instead of creating
                     a new slug.
                 title:
                   type: string
-                  description: Rename on publish; trimmed, and applied to the spec title.
+                  description: Rename the report on publish (drives name and, for a new report, the derived
+                    slug).
       responses:
         '200':
-          description: Published.
+          description: Published
           content:
             application/json:
               schema:
@@ -11728,43 +11694,25 @@ paths:
                     type: boolean
                   reportId:
                     type: string
-                    description: The published report's slug.
                   client:
                     type: string
                     description: Monorepo client slug.
                   embedPath:
                     type: string
-                    description: '`/embed/{client}/{reportId}`.'
                   repoSync:
-                    allOf:
-                    - $ref: '#/components/schemas/PromoteResult'
-                    description: Present only when the published report's origin is `promoted`.
+                    $ref: '#/components/schemas/ReportsPromoteResult'
         '400':
-          description: Not a `__draft-` id, or the draft has no composed report yet.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
-        '401':
-          description: Authentication required.
+          description: Not a draft id, or the draft has no composed report yet
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ReportsError'
         '403':
-          description: Publishing requires staff access, or the draft's client is out of scope.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsForbidden'
         '404':
-          description: Draft not found, or its client not found.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsNotFound'
         '422':
-          description: The report server rejected the compose.
+          description: The authoring service rejected the spec
           content:
             application/json:
               schema:
@@ -11773,14 +11721,9 @@ paths:
                   error:
                     type: string
                   lint:
-                    description: Lint diagnostics from the authoring service, passed through verbatim.
-                    nullable: true
+                    description: Lint findings from the authoring service, when present.
         '500':
-          description: Could not resolve the client slug for this draft, or publish failed.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReportsError'
+          $ref: '#/components/responses/ReportsServerError'
   /v1/scheduled-tasks:
     get:
       operationId: listScheduledTasks
