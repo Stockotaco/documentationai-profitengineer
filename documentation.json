@@ -31,17 +31,6 @@
             ]
           },
           {
-            "group": "Core Concepts",
-            "icon": "layers",
-            "pages": [
-              {
-                "title": "Features",
-                "path": "features",
-                "icon": "star"
-              }
-            ]
-          },
-          {
             "group": "Authorization",
             "icon": "key-round",
             "pages": [
@@ -203,53 +192,6 @@
             "icon": "terminal",
             "openapi": "api-reference/openapi.yaml",
             "pages": []
-          }
-        ]
-      },
-      {
-        "tab": "Help Center",
-        "icon": "help-circle",
-        "pages": [
-          {
-            "title": "Help Center",
-            "path": "help-center",
-            "icon": "home"
-          },
-          {
-            "group": "FAQs",
-            "icon": "help-circle",
-            "expandable": false,
-            "pages": [
-              {
-                "title": "Using Profit Engineer",
-                "path": "help-center/faq/using-profit-engineer",
-                "icon": "help-circle"
-              }
-            ]
-          },
-          {
-            "group": "Troubleshooting",
-            "icon": "alert-circle",
-            "expandable": false,
-            "pages": [
-              {
-                "title": "Dashboard Not Updating",
-                "path": "help-center/troubleshooting/dashboard-not-updating",
-                "icon": "alert-circle"
-              }
-            ]
-          },
-          {
-            "group": "Guides",
-            "icon": "book-open",
-            "expandable": false,
-            "pages": [
-              {
-                "title": "Analyze Campaign ROI",
-                "path": "help-center/guides/analyze-campaign-roi",
-                "icon": "book-open"
-              }
-            ]
           }
         ]
       }
