@@ -2,8 +2,13 @@ openapi: 3.0.3
 info:
   title: Mythic OS API
   version: 1.0.0
-  description: The REST surface of the Mythic OS client API. Every endpoint takes an API key from your
-    portal.
+  description: 'The REST surface of the Mythic OS client API. Every endpoint takes an API key from your
+    portal, sent as `Authorization: Bearer secret_...`.
+
+
+    Note the host. REST is served **only** on the hostname in `servers` below. The branded MCP hostname
+    (`mcp.mythicdata.io`) routes MCP and sign-in paths only, so a `/v1/...` request sent there returns
+    404 even though the endpoint exists. For the MCP surface see the MCP tab.'
 servers:
 - url: https://api-service-production-4d43.up.railway.app
 components:

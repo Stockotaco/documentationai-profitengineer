@@ -1,0 +1,133 @@
+---
+title: "Connecting"
+description: "Point Claude Code, Claude Desktop, or any MCP client at your data — by signing in, or with an API key."
+---
+
+## The URL
+
+```
+https://mcp.mythicdata.io/mcp
+```
+
+That is the whole configuration for most tools. There is no client ID to register and
+no manifest to host.
+
+<Callout kind="info">
+  This hostname serves MCP only. The REST API lives on a different host — see
+  [Which host serves what](#which-host-serves-what) below.
+</Callout>
+
+## Signing in (recommended for a person)
+
+If you are a person using an AI tool on your own machine, sign in. The tool gets its
+own credential tied to you, which you can revoke without affecting anyone else.
+
+<Steps>
+  <Step title="Add the server">
+    Point your tool at `https://mcp.mythicdata.io/mcp`. In Claude Code:
+
+    ```bash
+    claude mcp add --transport http mythic https://mcp.mythicdata.io/mcp
+    ```
+  </Step>
+  <Step title="Approve the request">
+    Your browser opens on your portal and asks you to approve the tool. The screen names
+    the app and the permissions it wants.
+  </Step>
+  <Step title="Check the tools arrived">
+    Ask the assistant to list its tools. You should see the always-available read tools
+    plus whatever your grant covers.
+  </Step>
+</Steps>
+
+A fresh sign-in is deliberately narrow. [Sign-in and OAuth](/authorization/oauth) covers
+what it can do out of the box and how to widen it.
+
+## Using an API key (for scripts and shared setups)
+
+A script has no browser, so it uses a key. Create one in your portal, then send it as a
+bearer token:
+
+<CodeGroup tabs="Header,Query string">
+```bash
+curl -X POST https://mcp.mythicdata.io/mcp \
+  -H "Authorization: Bearer secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+```bash
+# For tools that cannot set a header. Prefer the header where you can —
+# a query string lands in logs and shell history.
+curl -X POST "https://mcp.mythicdata.io/mcp?api_key=secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+</CodeGroup>
+
+See [API keys](/authorization/api-keys) for creating, scoping, and rotating them.
+
+## Pinning a client in the URL
+
+If your key covers more than one client, you can name the client in the path instead of
+selecting one at the start of every conversation:
+
+```
+https://mcp.mythicdata.io/mcp/c/<your-client-slug>
+```
+
+| | What decides the client | When to use it |
+|---|---|---|
+| `POST /mcp` | The key. One client on the key means that client. Several means the assistant must call `list_clients` then `select_client` first, and a tool called before that returns `No client selected`. | A person exploring, on a key scoped to one client |
+| `POST /mcp/c/<client>` | The path, on every request. No selection step, nothing to remember, nothing to lose on a reconnect. | Anything automated, and any long conversation |
+
+<Callout kind="tip">
+  Using the path form also means two assistants can work on two different clients at the
+  same time with the same key, without fighting over which one is selected.
+</Callout>
+
+## Which host serves what
+
+The MCP hostname and the REST hostname are genuinely different, and hitting the wrong
+one gives you a `404` that looks like a missing feature.
+
+| Surface | Host |
+|---|---|
+| MCP (`/mcp`, `/mcp/c/<client>`) | `https://mcp.mythicdata.io` |
+| REST API (`/v1/...`) | `https://api-service-production-4d43.up.railway.app` |
+
+Only MCP and its sign-in endpoints are routed on the branded hostname. If a `/v1/`
+request there returns `404`, that is the reason — the endpoint exists, on the other host.
+Every page in the API Reference tab shows the correct host in its example request.
+
+## If it does not work
+
+<ExpandableGroup>
+  <Expandable title="401 Unauthorized">
+    No key, a malformed one, or a revoked one. The response says which:
+
+    ```json
+    {
+      "message": "Provide API key as 'Authorization: Bearer secret_xxx' or '?api_key=secret_xxx'"
+    }
+    ```
+
+    On a sign-in flow, a `401` is also the normal first step — it is how your tool
+    discovers where to send you. If the browser never opens, your tool may not support
+    OAuth discovery; use a key instead.
+  </Expandable>
+  <Expandable title="Fewer tools than expected">
+    Tool lists are built per key. A tool whose scope your key lacks is not offered at
+    all, rather than offered and refused. Compare your key's scopes against
+    [All tools](/mcp/tools/all-tools), which names the scope for every one.
+  </Expandable>
+  <Expandable title="No client selected">
+    Your key covers more than one client and none is chosen yet. Either let the assistant
+    call `list_clients` and `select_client`, or switch to
+    `https://mcp.mythicdata.io/mcp/c/<your-client-slug>`.
+  </Expandable>
+  <Expandable title="A tool errors or a table is missing">
+    Ask the assistant to call `report_bug`. It routes to the team with the context
+    attached, which is faster than describing it secondhand.
+  </Expandable>
+</ExpandableGroup>

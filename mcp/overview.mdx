@@ -1,0 +1,79 @@
+---
+title: "MCP overview"
+description: "What the MCP server gives an AI assistant, how it relates to the REST API, and which surface to reach for."
+---
+
+## What it is
+
+The MCP server lets an AI assistant — Claude Code, Claude Desktop, or anything else
+that speaks the Model Context Protocol — work with your data directly. Instead of you
+exporting a CSV and pasting it into a chat, the assistant calls tools: it reads your
+metrics, queries your tables, writes a document, sets an alert.
+
+**103 tools across 16 families** are available to a client key. Every one of them is
+listed in [All tools](/mcp/tools/all-tools) with the scope it needs.
+
+<Callout kind="tip">
+  If you only want to try it, [Connecting](/mcp/connecting) takes about two minutes and
+  needs no configuration file.
+</Callout>
+
+## MCP or the REST API?
+
+They are two front doors onto the same system. The same governed metric definitions,
+the same documents, the same alert engine sit behind both.
+
+| | MCP | REST API |
+|---|---|---|
+| Built for | An AI assistant deciding what to call | Code you write |
+| You provide | A URL and a sign-in | A request per operation |
+| Discovery | The assistant lists the tools itself | You read the API Reference tab |
+| Best at | Exploration, analysis, "why did this change" | Scheduled jobs, pipelines, your own product |
+
+Pick MCP when a person is asking questions through an assistant. Pick REST when a
+program needs a predictable call. Nothing stops you using both with the same key.
+
+## What the tools cover
+
+<Columns cols="2">
+  <Card title="Read your numbers" icon="trending-up" href="/mcp/tools/metrics">
+    Governed metrics and their targets, resolved the same way for everyone who asks.
+  </Card>
+  <Card title="Query your data" icon="database" href="/mcp/tools/reports">
+    List tables, inspect a schema, validate a query, build a report.
+  </Card>
+  <Card title="Keep context" icon="book-open" href="/mcp/tools/memories">
+    Memories and documents, so an assistant does not re-derive the same answer weekly.
+  </Card>
+  <Card title="Watch for changes" icon="bell" href="/mcp/tools/alerts">
+    Alert rules, their history, and what fired.
+  </Card>
+</Columns>
+
+The remaining families cover scheduled tasks, email, Slack conversations, skills,
+prompts, discussions, the glossary, web fetching, funnel constraints, and
+incrementality. [All tools](/mcp/tools/all-tools) is the full list.
+
+## Metrics are the source of truth
+
+This matters more than any individual tool. A metric marked *governed* carries its own
+query, and resolving it always returns the same number — which is the point, because
+two people asking the same question should not get two answers.
+
+An assistant that re-derives a figure with its own SQL has produced an ad-hoc number,
+not your metric. Ask it to name the metric and period it used. Every well-behaved
+client of this server resolves governed metrics rather than recomputing them.
+
+## What limits a tool
+
+Two things, and both fail loudly rather than silently:
+
+- **Scopes.** A key carries a set of scopes; a tool whose scope is missing is not
+  offered. See [Scopes](/authorization/scopes).
+- **Your client.** A key is tied to your data. Tools your agency runs on your behalf
+  are not exposed to client keys at all, so they never appear in the list.
+
+<Callout kind="info">
+  Tool availability is decided per key, so two assistants pointed at the same server
+  with different keys will genuinely see different tool lists.
+</Callout>
