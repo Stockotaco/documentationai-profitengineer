@@ -1,0 +1,57 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Incrementality"
+description: "Read geo-holdout experiments and the incrementality coefficients derived from them."
+---
+
+<Callout kind="info">
+  Read-only for client keys. Creating, computing, and deleting an experiment changes real Meta ad targeting, so your agency runs those steps for you.
+</Callout>
+
+## check_geo_eligibility
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Pre-flight: is this client a viable geo-testing candidate? Runs five checks (geo coverage, ≥28d history, ≥6 markets, matchability, detectability). Pass daily_budget to judge detectability against realistic spend. IMPORTANT: eligibility measures a conversion event that defaults to one literally named 'purchase' — if the client has no such event you get an all-zeros result. Pass auto=true (recommended first call) to let Mythic inventory the client's conversion events, detect which carry revenue, and return the best candidate with a ready-to-use suggested event; or target one directly with event_name. Use measure='count' for lead-gen events with no monetary value (form fills, lead captures). Do this before designing an experiment.
+
+## suggest_control_markets
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Rank candidate control regions by how closely their daily conversions track the test set (highest correlation, reasonable volume_ratio). Take the top 2–3 as control_regions when creating the experiment. Provide test_regions, or pass event_name to have Mythic rank markets for a specific conversion event. Use measure='count' for lead-gen events with no monetary value.
+
+## list_geo_experiments
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+List this client's geo-holdout experiments, newest first (id, name, status, test_window, and derived progress).
+
+## get_geo_experiment
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Get a single geo experiment by id — its full definition, status, derived progress (phase/days/percent/underpowered), and result (once computed).
+
+## get_geo_launch_plan
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Get the ad-side recipe to run the experiment in Meta: control regions resolved to targeting keys, the exact excluded_geo_locations change, apply/revert dates, a step-by-step checklist, and paste-ready Marketing API calls. Check launchable before acting — if false, launch_blockers lists what to resolve first (e.g. non-US control regions).
+
+## validate_geo_experiment
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Before launch: an A/A placebo (aa_pass, market_match_quality) that proves the market pairing measures zero lift when there is none — fix the regions before spending if it fails. While running: an interim drift check (peeking:true, drift_detected, outlier_days). Never a substitute for compute.
+
+## get_incrementality_coefficients
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+The current per-channel incrementality coefficient (inverse-variance weighted median across computed experiments). Multiply Meta's reported ROAS by this to get true incremental ROAS. Optionally filter by channel (e.g. 'meta').
+
+## get_coefficient_history
+
+Scope `incrementality:read` — you can grant this on a key you create yourself.
+
+Every computed experiment's coefficient in order, each with the running weighted median at that point — the progressive-truth series, grouped by series_key (same channel + revenue definition + spend scope pool together).

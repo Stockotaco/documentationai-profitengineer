@@ -1,0 +1,33 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Email"
+description: "Read your inbound and outbound email threads. Read-only."
+---
+
+<Callout kind="info">
+  Read the client's inbound/outbound email inbox — recent, keyword search, and full threads (with an awaitingReply flag for open asks). Read-only; ingest + replies are managed in the app.
+</Callout>
+
+## list_email_threads
+
+Scope `emails:read` — you can grant this on a key you create yourself.
+
+Triage view of the client's email as CONVERSATIONS (one row per thread), newest activity first. Each thread has its participants, message count, first/last timestamps, lastDirection, a lastSnippet, and awaitingReply (true = the latest message is from the client and we haven't replied → an OPEN ask; false = we've responded). Best first call for 'what has this client asked, what's open, what's closed'. Use get_email_thread to read a full conversation.
+
+## list_emails
+
+Scope `emails:read` — you can grant this on a key you create yourself.
+
+List this client's recent emails (inbound from the client + our sent replies), newest first. An inbound message in a thread we haven't replied to is an open/unaddressed request. Use get_email_thread to read a full conversation.
+
+## search_emails
+
+Scope `emails:read` — you can grant this on a key you create yourself.
+
+Search this client's emails by keyword (matches subject and body). Returns matching messages newest first with a snippet.
+
+## get_email_thread
+
+Scope `emails:read` — you can grant this on a key you create yourself.
+
+Get every message in one email thread in chronological order (full bodies), plus awaitingReply (true when the latest inbound message has no newer reply — i.e. the ask is still open).

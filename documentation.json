@@ -42,6 +42,133 @@
             ]
           },
           {
+            "group": "Authorization",
+            "icon": "key-round",
+            "pages": [
+              {
+                "title": "API keys",
+                "path": "authorization/api-keys",
+                "icon": "key-round"
+              },
+              {
+                "title": "Scopes",
+                "path": "authorization/scopes",
+                "icon": "list-checks"
+              },
+              {
+                "title": "How scopes resolve",
+                "path": "authorization/scope-rules",
+                "icon": "git-branch"
+              },
+              {
+                "title": "Self-serve vs agency-granted",
+                "path": "authorization/self-serve-vs-staff",
+                "icon": "user-check"
+              },
+              {
+                "title": "Sign in instead of sharing a key",
+                "path": "authorization/oauth",
+                "icon": "log-in"
+              },
+              {
+                "title": "Rate limits",
+                "path": "authorization/rate-limits",
+                "icon": "gauge"
+              }
+            ]
+          },
+          {
+            "group": "MCP Tools",
+            "icon": "wrench",
+            "pages": [
+              {
+                "title": "All tools",
+                "path": "mcp/tools/all-tools",
+                "icon": "list"
+              },
+              {
+                "title": "Always available",
+                "path": "mcp/tools/read-only",
+                "icon": "unlock"
+              },
+              {
+                "title": "Metrics",
+                "path": "mcp/tools/metrics",
+                "icon": "target"
+              },
+              {
+                "title": "Reports",
+                "path": "mcp/tools/reports",
+                "icon": "file-bar-chart"
+              },
+              {
+                "title": "Glossary",
+                "path": "mcp/tools/glossary",
+                "icon": "book-a"
+              },
+              {
+                "title": "Documents",
+                "path": "mcp/tools/documents",
+                "icon": "files"
+              },
+              {
+                "title": "Memories",
+                "path": "mcp/tools/memories",
+                "icon": "brain"
+              },
+              {
+                "title": "Skills",
+                "path": "mcp/tools/skills",
+                "icon": "graduation-cap"
+              },
+              {
+                "title": "Prompts",
+                "path": "mcp/tools/prompts",
+                "icon": "message-square-quote"
+              },
+              {
+                "title": "Discussions",
+                "path": "mcp/tools/discussions",
+                "icon": "messages-square"
+              },
+              {
+                "title": "Alerts",
+                "path": "mcp/tools/alerts",
+                "icon": "bell"
+              },
+              {
+                "title": "Scheduled tasks",
+                "path": "mcp/tools/scheduled-tasks",
+                "icon": "clock"
+              },
+              {
+                "title": "Email",
+                "path": "mcp/tools/email",
+                "icon": "mail"
+              },
+              {
+                "title": "Slack conversations",
+                "path": "mcp/tools/slack-conversations",
+                "icon": "hash"
+              },
+              {
+                "title": "Web",
+                "path": "mcp/tools/web",
+                "icon": "globe"
+              },
+              {
+                "title": "Funnel constraints",
+                "path": "mcp/tools/funnel-constraints",
+                "icon": "filter"
+              },
+              {
+                "title": "Incrementality",
+                "path": "mcp/tools/incrementality",
+                "icon": "trending-up"
+              }
+            ]
+          },
+          {
             "group": "Advanced",
             "icon": "settings",
             "pages": [

@@ -1,0 +1,55 @@
+---
+title: "How scopes resolve"
+description: "Write implies read, wildcards, and the scopes that are never granted implicitly."
+---
+
+The scopes on your key are not the whole story — a few rules expand them. This page is
+what to read when a call you expected to work returns `403`, or one you expected to be
+blocked doesn't.
+
+## Write includes read
+
+A write scope covers the matching read. A key with `documents:write` can list and read
+documents without also holding `documents:read`.
+
+That means you rarely need to grant both. Grant the write when you need it, and the read
+comes with it.
+
+## Wildcards
+
+Two shorthand scopes exist:
+
+| Scope | Expands to |
+|-------|-----------|
+| `*:read` | Every read scope |
+| `*:write` | Every write scope, and so every read as well |
+
+<Callout kind="alert">
+  Wildcards absorb scopes added in future releases, which is exactly why you can't grant
+  one to yourself — only your agency can. Grant the concrete scopes instead; a key that
+  holds `metrics:read` and `documents:read` is far easier to reason about a year later
+  than one holding `*:read`.
+</Callout>
+
+Some sensitive scopes are deliberately **left out** of `*:write`, so a wildcard never
+silently confers them. On a client key that's `task_proposals:write` — approving a
+proposal can send a real Slack message or discussion reply, so it must be granted by
+name.
+
+## Older keys
+
+Keys created before scopes existed keep working, with implicit read-only access. If you
+hold one, it can read but not write, and it needs replacing before it can do anything
+new. Create a fresh key with explicit scopes when you next touch that integration.
+
+## Where a scope is checked
+
+Every request is checked twice, and both checks use the same rules:
+
+1. **Tool listing.** Your MCP client only sees the tools your scopes allow, so an agent
+   never plans around a tool it can't call.
+2. **Call time.** The tool call itself is checked again, so a stale tool list can't be
+   used to reach past your scopes.
+
+A `403` names the scope you're missing. Add exactly that one — resist widening to a
+wildcard to make an error go away.

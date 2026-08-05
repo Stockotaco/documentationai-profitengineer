@@ -1,0 +1,36 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Glossary"
+description: "The shared definitions for your business terms."
+---
+
+
+## create_glossary_term
+
+Scope `glossary:write` — your agency grants this one.
+
+Create a new client-specific glossary term. This term will only be visible for this client.
+
+## update_glossary_term
+
+Scope `glossary:write` — your agency grants this one.
+
+Update an existing client-specific glossary term. Can only update terms owned by this client.
+
+## delete_glossary_term
+
+Scope `glossary:write` — your agency grants this one.
+
+Delete a client-specific glossary term. Can only delete terms owned by this client.
+
+## set_glossary_override
+
+Scope `glossary:write` — your agency grants this one.
+
+Override a global glossary term's definition for this client. The global term remains unchanged for other clients.
+
+## remove_glossary_override
+
+Scope `glossary:write` — your agency grants this one.
+
+Remove a client's override for a global glossary term, reverting to the global definition.

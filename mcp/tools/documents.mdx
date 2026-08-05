@@ -1,0 +1,42 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Documents"
+description: "Your knowledge base, plus the search that reads across it."
+---
+
+
+## list_documents
+
+Scope `documents:read` — you can grant this on a key you create yourself.
+
+List this client's knowledge documents (metadata only — id, name, category, type, size), newest first.
+
+## get_document
+
+Scope `documents:read` — you can grant this on a key you create yourself.
+
+Read the full text of one of this client's knowledge documents by id.
+
+## search_knowledge
+
+Scope `documents:read` — you can grant this on a key you create yourself.
+
+Semantic + keyword search across this client's knowledge documents, discussion threads, and ingested Slack conversations. Finds relevant passages by meaning, not just exact words. Returns ranked excerpts; follow up with get_document(source_id) for full document text or get_discussions for full threads.
+
+## create_document
+
+Scope `documents:write` — you can grant this on a key you create yourself.
+
+Create a knowledge document for this client. Text only — 'name' must end in a text extension (.md, .txt, .csv, .tsv, .json, .log); 'content' max ~1MB.
+
+## update_document
+
+Scope `documents:write` — you can grant this on a key you create yourself.
+
+Update a knowledge document by id — only the fields you pass change. 'content' max ~1MB.
+
+## delete_document
+
+Scope `documents:write` — you can grant this on a key you create yourself.
+
+Permanently delete one of this client's knowledge documents by id.

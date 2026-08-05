@@ -1,0 +1,105 @@
+---
+title: "API keys"
+description: "Create a key, send it with a request, and understand what a key can reach."
+---
+
+An API key authenticates you to both surfaces: the MCP endpoint your AI tools connect
+to, and the REST API. One key, one set of permissions.
+
+## Create a key
+
+<Steps>
+  <Step title="Open the MCP tab in your portal">
+    Sign in to your portal and open **MCP** in the sidebar.
+  </Step>
+  <Step title="Create a key">
+    Name it after where it will run — `claude-code-laptop`, `reporting-cron` — so you
+    can revoke the right one later.
+  </Step>
+  <Step title="Choose its permissions">
+    Pick only the scopes that key needs. See [Scopes](/authorization/scopes) for what
+    each one unlocks.
+  </Step>
+  <Step title="Copy it now">
+    The full key is shown once, at creation, and never again.
+  </Step>
+</Steps>
+
+<Callout kind="alert">
+  We store only a SHA-256 hash of your key, plus its first 16 characters so you can
+  recognise it in the portal. Lose the key and there is no recovery — create a new one
+  and delete the old.
+</Callout>
+
+## Key format
+
+```
+secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+└─────┘└──────────────────────────────┘
+ prefix      32 random characters
+```
+
+39 characters total. The random part comes from a cryptographic random source.
+
+## Send it with a request
+
+Use the `Authorization` header:
+
+```bash
+curl https://api-service-production-4d43.up.railway.app/v1/metrics \
+  -H "Authorization: Bearer secret_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+```
+
+For MCP clients that can't set headers, the endpoint also accepts the key as a query
+parameter:
+
+```
+https://api-service-production-4d43.up.railway.app/mcp?api_key=secret_xxx
+```
+
+<Callout kind="alert">
+  The query-parameter fallback works on `/mcp` only, never on `/v1`. Prefer the header
+  — URLs end up in logs and browser history.
+</Callout>
+
+## What a key can reach
+
+Your key is bound to your client workspace. You never name a client in a request —
+the server derives it from the key, and a key cannot read another client's data.
+
+## Errors
+
+<ResponseField name="401 Missing or invalid credentials" field-type="object">
+  No key, a malformed key, or a revoked one.
+
+```json
+{
+  "error": "Missing or invalid credentials",
+  "message": "Provide API key as 'Authorization: Bearer secret_xxx' or '?api_key=secret_xxx'"
+}
+```
+</ResponseField>
+
+<ResponseField name="403 Permission denied" field-type="object">
+  A valid key that lacks a scope the call needs. The missing scope is named.
+
+```json
+{
+  "error": "Permission denied",
+  "message": "Missing required scopes: metrics:write"
+}
+```
+</ResponseField>
+
+## Keeping keys safe
+
+- One key per place it runs, so revoking one doesn't break the others.
+- Keep keys in environment variables or a secret manager, never in source control.
+- Grant the narrowest set of scopes that works, and widen when something actually fails.
+- Delete keys you no longer use — an unused key is still a live key.
+
+## Rotate a key
+
+Create the replacement first, deploy it, confirm traffic has moved, then delete the
+old key. Deleting takes effect immediately, so doing it in the other order causes an
+outage.

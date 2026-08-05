@@ -1,0 +1,51 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Reports"
+description: "List your reports, inspect your data schema, and author new report drafts."
+---
+
+<Callout kind="info">
+  Report authoring composes from a trusted component library — the agent picks components + writes queries; the server renders the HTML. Client-scoped keys save drafts (a per-client guardrails policy is required); agency keys may publish.
+</Callout>
+
+## list_components
+
+Scope `reports:read` — you can grant this on a key you create yourself.
+
+List the report component library (scorecard, table, funnel, trend, etc.) with each component's purpose, when to use it, and whether it can be composed automatically. Call this FIRST when composing a report so you pick real components for the ReportSpec. Returns the component manifest index.
+
+## get_client_schema
+
+Scope `reports:read` — you can grant this on a key you create yourself.
+
+Get this client's authorized BigQuery tables and their columns in one call. Use this to discover what data is available BEFORE writing queries. Returns tables with column names/types and the client's datasets.
+
+## validate_query
+
+Scope `reports:read` — you can grant this on a key you create yourself.
+
+Dry-run a BigQuery SQL query against this client's data WITHOUT executing it — returns the result column names and bytes that would be processed, or a clear rejection if it references unauthorized tables or won't parse. Confirm each query in your ReportSpec is valid before save_report. Parameterize date filters with @date_start / @date_end.
+
+## create_report
+
+Scope `reports:write` — your agency grants this one.
+
+Create a new report for this client with an embed URL.
+
+## update_report
+
+Scope `reports:write` — your agency grants this one.
+
+Update an existing report's metadata (name, description, category, icon, tables).
+
+## delete_report
+
+Scope `reports:write` — your agency grants this one.
+
+Archive a report (soft delete). The report will be hidden but can be restored by an admin.
+
+## save_report
+
+Scope `reports:write` — your agency grants this one.
+
+Create or update a report for this client from a structured ReportSpec (chosen components + configs + queries + data bindings). The server composes and renders from the trusted component library — you do NOT write HTML. Returns a live preview URL plus a lint report so you can iterate. Client (non-agency) callers save a draft; agency callers may pass publish:true to publish.

@@ -1,0 +1,45 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Memories"
+description: "Knowledge the AI keeps between sessions so it does not re-derive the same reasoning."
+---
+
+<Callout kind="info">
+  Persistent client knowledge the AI recalls across sessions.
+</Callout>
+
+## list_memories
+
+Scope `memories:read` — you can grant this on a key you create yourself.
+
+List memories for this client (shared + the key's user's personal, if the key has one), newest first.
+
+## get_memory
+
+Scope `memories:read` — you can grant this on a key you create yourself.
+
+Read one of this client's memories by id (shared, or the key's user's personal).
+
+## search_memories
+
+Scope `memories:read` — you can grant this on a key you create yourself.
+
+Semantic + keyword search across this client's memories (shared + the key's user's personal). Returns ranked entries.
+
+## create_memory
+
+Scope `memories:write` — you can grant this on a key you create yourself.
+
+Save a memory for this client — authored by the user this API key is associated with (if any). Use for durable facts, decisions, or context. Set shared:true to share with the whole client team; default is personal (shared with the client if the key has no associated user).
+
+## update_memory
+
+Scope `memories:write` — you can grant this on a key you create yourself.
+
+Update a memory by id — the key user's own, or any shared memory on the client. Only the fields you pass change.
+
+## delete_memory
+
+Scope `memories:write` — you can grant this on a key you create yourself.
+
+Permanently delete a memory by id — the key user's own, or any shared memory on the client.

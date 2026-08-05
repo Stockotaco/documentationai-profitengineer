@@ -1,0 +1,39 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Skills"
+description: "Instruction playbooks an agent loads on demand with use_skill."
+---
+
+<Callout kind="info">
+  The client's skills — instruction playbooks the agent loads on demand via use_skill.
+</Callout>
+
+## list_skills
+
+Scope `skills:read` — you can grant this on a key you create yourself.
+
+List this client's skills (contextual instruction playbooks the agent can load on demand via use_skill), by name.
+
+## get_skill
+
+Scope `skills:read` — you can grant this on a key you create yourself.
+
+Get a single skill by id, including its full markdown content and tool config.
+
+## create_skill
+
+Scope `skills:write` — your agency grants this one.
+
+Create a new skill for this client. Content is the markdown instructions loaded when the skill is activated; config optionally lists tool references the skill switches on.
+
+## update_skill
+
+Scope `skills:write` — your agency grants this one.
+
+Update fields of an existing skill. Only pass the fields you want to change; renaming re-derives the slug.
+
+## delete_skill
+
+Scope `skills:write` — your agency grants this one.
+
+Delete a skill by id. Agents that had it equipped are detached automatically.

@@ -1,0 +1,78 @@
+---
+title: "Sign in instead of sharing a key"
+description: "Connect an AI tool to MCP with your own portal account, so each person's access is their own."
+---
+
+An API key is a shared secret: everyone who holds it acts as the same principal. For
+people, there's a better option — point your AI tool at the MCP endpoint and sign in with
+your portal account. Each person gets their own access, their own audit trail, and their
+own revocation.
+
+<Callout kind="info">
+  Sign-in works on the MCP endpoint only. The REST API is API-key authenticated, always.
+</Callout>
+
+## When to use which
+
+| | Sign-in | API key |
+|---|---|---|
+| A person using Claude Code or a desktop AI tool | Yes | Works, but shared |
+| A script, cron job, or CI pipeline | No — there's no browser | Yes |
+| You want per-person attribution | Yes | No |
+| You want to revoke one person's access | Yes | No — the key is shared |
+
+## Connecting
+
+<Steps>
+  <Step title="Add the MCP server">
+    Point your tool at `https://api-service-production-4d43.up.railway.app/mcp`. Most
+    tools discover the rest on their own — no key, no client ID to register.
+  </Step>
+  <Step title="Approve the request">
+    Your browser opens on your portal, where you're asked to approve the tool. The
+    screen names the app and the permissions it's asking for.
+  </Step>
+  <Step title="Confirm the tools are there">
+    Ask your tool to list its tools. You should see the read tools plus the ones your
+    grant includes.
+  </Step>
+</Steps>
+
+## What a fresh sign-in can do
+
+A new sign-in is deliberately narrow — enough to read your data and run a query, plus
+save what it learns:
+
+| Scope | What it allows |
+|-------|---------------|
+| `reports:read` | Read your reports |
+| `glossary:read` | Read your glossary |
+| `bigquery:datasets:read` | List datasets |
+| `bigquery:tables:read` | Read table schemas |
+| `bigquery:query:write` | Run queries |
+| `memories:write` | Save what it learns for next time |
+
+Anything beyond that is an explicit widening your agency makes — a tool can't obtain it
+by asking for it during the handshake.
+
+## Managing your sign-ins
+
+Every tool you've connected appears as **Signed-in apps** on the MCP tab of your portal.
+For each one you can see when it was authorised, adjust its permissions, or revoke it.
+
+Revocation takes effect immediately, not at the end of some token lifetime. A permissions
+edit applies on the tool's next request, in both directions — adding and removing.
+
+<Callout kind="tip">
+  Revoke anything you don't recognise, and anything on a device you no longer have. A
+  revoked sign-in can't be resurrected; the person just signs in again.
+</Callout>
+
+## If your account doesn't exist yet
+
+Signing in requires an existing portal account. By default, an unrecognised address is
+rejected rather than provisioned. Where your agency has enabled it, an address on your
+company's domain triggers an **invitation** instead — a domain match is not proof you own
+the address, so an account is never created silently.
+
+Ask your agency for an invite if you don't have one.

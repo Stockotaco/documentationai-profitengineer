@@ -1,0 +1,39 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Discussions"
+description: "Threaded conversations on your reports. Reading is always on; these tools write."
+---
+
+<Callout kind="info">
+  Reads use the always-on get_discussions tool; the tools below need discussions:write.
+</Callout>
+
+## create_discussion
+
+Scope `discussions:write` — you can grant this on a key you create yourself.
+
+Start a new discussion thread on one of this client's reports.
+
+## reply_to_discussion
+
+Scope `discussions:write` — you can grant this on a key you create yourself.
+
+Reply to an existing discussion thread (inherits the parent's report).
+
+## update_discussion
+
+Scope `discussions:write` — you can grant this on a key you create yourself.
+
+Update a discussion by id — only the fields you pass change.
+
+## set_discussion_status
+
+Scope `discussions:write` — you can grant this on a key you create yourself.
+
+Set a discussion's status. Use 'resolved' to close it, 'open' to reopen.
+
+## delete_discussion
+
+Scope `discussions:write` — you can grant this on a key you create yourself.
+
+Permanently delete a discussion and its replies by id.

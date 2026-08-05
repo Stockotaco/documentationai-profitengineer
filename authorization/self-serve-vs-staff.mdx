@@ -1,0 +1,60 @@
+---
+title: "Self-serve vs agency-granted"
+description: "Which permissions you can grant yourself, and which your agency has to add."
+---
+
+You can create keys for yourself without waiting on anyone. What you can't do is grant
+yourself every permission — some writes are held back, and this page says which and why.
+
+## What you can grant yourself
+
+- **Every read scope.** Anything that only reads your own workspace.
+- **Four writes**, all of which act on your own knowledge and are reversible:
+
+| Scope | What it writes |
+|-------|---------------|
+| `memories:write` | Knowledge the AI keeps between sessions |
+| `documents:write` | Your knowledge-base documents |
+| `discussions:write` | Comments and replies on your reports |
+| `tasks:write` | Scheduled task definitions |
+
+`tasks:write` is on this list because a task is inert on its own. Creating one changes
+nothing until a run happens, and a run only ever produces a **proposal** that waits for
+a human.
+
+## What your agency grants
+
+Everything else, and the reasoning is consistent: the write either changes a shared
+definition or causes something to happen outside the platform.
+
+| Scope | Why it's held back |
+|-------|-------------------|
+| `metrics:write` | A metric definition is shared. Changing it changes the number everyone sees. |
+| `glossary:write` | Same reason — a definition everyone reads. |
+| `reports:write` | Reports are what your whole team reads. |
+| `alerts:write` | An alert fires notifications at real people. |
+| `task_proposals:write` | Approving a proposal sends the Slack message or discussion reply for real. |
+| `constraints:write` | A stored benchmark silently changes what every future funnel diagnosis says. |
+| `skills:write`, `prompts:write` | They steer how agents behave on your account. |
+| BigQuery and PostHog writes | They touch your warehouse and analytics directly. |
+
+<Callout kind="info">
+  Nothing here is a permanent restriction. Ask your agency and they can add any of these
+  to your key. The split just means those permissions come with a conversation rather
+  than a checkbox.
+</Callout>
+
+## Permissions your key can never hold
+
+A small set of capabilities belong to your agency's own keys, not to a client key, and
+they can't be granted to you at all:
+
+- **Managing clients** — creating, renaming, or archiving client workspaces.
+- **The bug-report inbox** — triaging what agents file across all of your agency's clients.
+- **Posting to Slack** — sending arbitrary messages. Alerts and approved proposals still
+  reach Slack; what's restricted is free-form posting.
+- **Running geo experiments** — creating, computing, or deleting one changes live Meta ad
+  targeting. You can read every result; your agency runs the experiment.
+- **Publishing reports** — you can author and save drafts, and your agency publishes.
+
+These tools aren't in this documentation, because your key will never see them.

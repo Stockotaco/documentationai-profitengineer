@@ -1,0 +1,51 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Always available"
+description: "Seven tools every key can call without any scope."
+---
+
+<Callout kind="info">
+  Available to every key — no scope required.
+</Callout>
+
+## get_client_context
+
+No scope required.
+
+Get full context about this client including business details, glossary terms, available reports, BigQuery tables, and recent discussions. Call this at the start of a conversation to understand the client's data environment.
+
+## get_glossary
+
+No scope required.
+
+Get definitions for business terms used in this client's reports.
+
+## list_reports
+
+No scope required.
+
+List all available reports for this client.
+
+## list_tables
+
+No scope required.
+
+List all BigQuery tables available for querying.
+
+## get_discussions
+
+No scope required.
+
+Get discussion threads from the client's reports. Useful for understanding previous questions, insights, and decisions.
+
+## list_alerts
+
+No scope required.
+
+List recent triggered alerts for this client. Shows alerts where monitored conditions were met, including the evaluated values and optional AI analysis.
+
+## list_models
+
+No scope required.
+
+List the AI models available for ai_analysis alert conditions. Use a returned model id as `ai_model` when creating/updating an alert.

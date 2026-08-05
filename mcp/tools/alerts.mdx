@@ -1,0 +1,78 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Alerts"
+description: "Alert rules, their history, and the actions they fire."
+---
+
+
+## list_alert_rules
+
+Scope `alerts:read` — you can grant this on a key you create yourself.
+
+List this client's alert rules (configuration + status), newest first.
+
+## get_alert
+
+Scope `alerts:read` — you can grant this on a key you create yourself.
+
+Get a single alert rule with its actions.
+
+## get_alert_history
+
+Scope `alerts:read` — you can grant this on a key you create yourself.
+
+Get recent execution history for an alert rule.
+
+## preview_alert_query
+
+Scope `alerts:read` — you can grant this on a key you create yourself.
+
+Validate a BigQuery SQL against this client's allowed tables and return a small preview of results.
+
+## create_alert
+
+Scope `alerts:write` — your agency grants this one.
+
+Create an alert rule for this client, optionally with email/webhook/slack actions in the same call. Provide either a 'conditions' array (with 'condition_combinator') or the deprecated single-condition fields.
+
+## update_alert
+
+Scope `alerts:write` — your agency grants this one.
+
+Update fields of an existing alert rule.
+
+## delete_alert
+
+Scope `alerts:write` — your agency grants this one.
+
+Delete an alert rule (its actions and history are removed too).
+
+## set_alert_status
+
+Scope `alerts:write` — your agency grants this one.
+
+Pause or resume an alert rule.
+
+## trigger_alert
+
+Scope `alerts:write` — your agency grants this one.
+
+Enqueue an immediate execution of an alert rule.
+
+## add_alert_action
+
+Scope `alerts:write` — your agency grants this one.
+
+Add an email, webhook, or Slack action to an alert rule.
+
+## update_alert_action
+
+Scope `alerts:write` — your agency grants this one.
+
+Update an existing action on an alert rule.
+
+## delete_alert_action
+
+Scope `alerts:write` — your agency grants this one.
+
+Delete an action from an alert rule.

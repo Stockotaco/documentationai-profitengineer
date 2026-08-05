@@ -1,0 +1,113 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "All tools"
+description: "Every MCP tool available to a client key, with the scope each one needs."
+---
+
+103 tools across 16 families. Tools your agency runs on your behalf are not listed.
+
+| Tool | Family | Scope |
+|------|--------|-------|
+| `get_client_context` | [Always available](/mcp/tools/read-only) | none |
+| `get_glossary` | [Always available](/mcp/tools/read-only) | none |
+| `list_reports` | [Always available](/mcp/tools/read-only) | none |
+| `list_tables` | [Always available](/mcp/tools/read-only) | none |
+| `get_discussions` | [Always available](/mcp/tools/read-only) | none |
+| `list_alerts` | [Always available](/mcp/tools/read-only) | none |
+| `list_models` | [Always available](/mcp/tools/read-only) | none |
+| `create_glossary_term` | [Glossary](/mcp/tools/glossary) | `glossary:write` |
+| `update_glossary_term` | [Glossary](/mcp/tools/glossary) | `glossary:write` |
+| `delete_glossary_term` | [Glossary](/mcp/tools/glossary) | `glossary:write` |
+| `set_glossary_override` | [Glossary](/mcp/tools/glossary) | `glossary:write` |
+| `remove_glossary_override` | [Glossary](/mcp/tools/glossary) | `glossary:write` |
+| `list_components` | [Reports](/mcp/tools/reports) | `reports:read` |
+| `get_client_schema` | [Reports](/mcp/tools/reports) | `reports:read` |
+| `validate_query` | [Reports](/mcp/tools/reports) | `reports:read` |
+| `create_report` | [Reports](/mcp/tools/reports) | `reports:write` |
+| `update_report` | [Reports](/mcp/tools/reports) | `reports:write` |
+| `delete_report` | [Reports](/mcp/tools/reports) | `reports:write` |
+| `save_report` | [Reports](/mcp/tools/reports) | `reports:write` |
+| `list_metrics` | [Metrics](/mcp/tools/metrics) | `metrics:read` |
+| `get_metric` | [Metrics](/mcp/tools/metrics) | `metrics:read` |
+| `get_metric_value` | [Metrics](/mcp/tools/metrics) | `metrics:read` |
+| `create_metric` | [Metrics](/mcp/tools/metrics) | `metrics:write` |
+| `update_metric` | [Metrics](/mcp/tools/metrics) | `metrics:write` |
+| `delete_metric` | [Metrics](/mcp/tools/metrics) | `metrics:write` |
+| `set_metric_target` | [Metrics](/mcp/tools/metrics) | `metrics:write` |
+| `delete_metric_period` | [Metrics](/mcp/tools/metrics) | `metrics:write` |
+| `list_alert_rules` | [Alerts](/mcp/tools/alerts) | `alerts:read` |
+| `get_alert` | [Alerts](/mcp/tools/alerts) | `alerts:read` |
+| `get_alert_history` | [Alerts](/mcp/tools/alerts) | `alerts:read` |
+| `preview_alert_query` | [Alerts](/mcp/tools/alerts) | `alerts:read` |
+| `create_alert` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `update_alert` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `delete_alert` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `set_alert_status` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `trigger_alert` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `add_alert_action` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `update_alert_action` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `delete_alert_action` | [Alerts](/mcp/tools/alerts) | `alerts:write` |
+| `list_tasks` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:read` |
+| `get_task` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:read` |
+| `list_task_runs` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:read` |
+| `get_task_run` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:read` |
+| `create_task` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:write` |
+| `update_task` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:write` |
+| `delete_task` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:write` |
+| `set_task_status` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:write` |
+| `run_task_now` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `tasks:write` |
+| `approve_task_proposal` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `task_proposals:write` |
+| `dismiss_task_proposal` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `task_proposals:write` |
+| `restore_task_proposal` | [Scheduled tasks](/mcp/tools/scheduled-tasks) | `task_proposals:write` |
+| `list_documents` | [Documents](/mcp/tools/documents) | `documents:read` |
+| `get_document` | [Documents](/mcp/tools/documents) | `documents:read` |
+| `search_knowledge` | [Documents](/mcp/tools/documents) | `documents:read` |
+| `create_document` | [Documents](/mcp/tools/documents) | `documents:write` |
+| `update_document` | [Documents](/mcp/tools/documents) | `documents:write` |
+| `delete_document` | [Documents](/mcp/tools/documents) | `documents:write` |
+| `list_agent_prompts` | [Prompts](/mcp/tools/prompts) | `prompts:read` |
+| `get_agent_prompt` | [Prompts](/mcp/tools/prompts) | `prompts:read` |
+| `create_agent_prompt` | [Prompts](/mcp/tools/prompts) | `prompts:write` |
+| `update_agent_prompt` | [Prompts](/mcp/tools/prompts) | `prompts:write` |
+| `delete_agent_prompt` | [Prompts](/mcp/tools/prompts) | `prompts:write` |
+| `list_skills` | [Skills](/mcp/tools/skills) | `skills:read` |
+| `get_skill` | [Skills](/mcp/tools/skills) | `skills:read` |
+| `create_skill` | [Skills](/mcp/tools/skills) | `skills:write` |
+| `update_skill` | [Skills](/mcp/tools/skills) | `skills:write` |
+| `delete_skill` | [Skills](/mcp/tools/skills) | `skills:write` |
+| `list_memories` | [Memories](/mcp/tools/memories) | `memories:read` |
+| `get_memory` | [Memories](/mcp/tools/memories) | `memories:read` |
+| `search_memories` | [Memories](/mcp/tools/memories) | `memories:read` |
+| `create_memory` | [Memories](/mcp/tools/memories) | `memories:write` |
+| `update_memory` | [Memories](/mcp/tools/memories) | `memories:write` |
+| `delete_memory` | [Memories](/mcp/tools/memories) | `memories:write` |
+| `create_discussion` | [Discussions](/mcp/tools/discussions) | `discussions:write` |
+| `reply_to_discussion` | [Discussions](/mcp/tools/discussions) | `discussions:write` |
+| `update_discussion` | [Discussions](/mcp/tools/discussions) | `discussions:write` |
+| `set_discussion_status` | [Discussions](/mcp/tools/discussions) | `discussions:write` |
+| `delete_discussion` | [Discussions](/mcp/tools/discussions) | `discussions:write` |
+| `list_slack_people` | [Slack conversations](/mcp/tools/slack-conversations) | `slack:read` |
+| `get_slack_messages` | [Slack conversations](/mcp/tools/slack-conversations) | `slack:read` |
+| `get_transcript` | [Slack conversations](/mcp/tools/slack-conversations) | `slack:read` |
+| `fetch_page` | [Web](/mcp/tools/web) | `web:read` |
+| `scrape_page_elements` | [Web](/mcp/tools/web) | `web:read` |
+| `extract_page_data` | [Web](/mcp/tools/web) | `web:read` |
+| `list_email_threads` | [Email](/mcp/tools/email) | `emails:read` |
+| `list_emails` | [Email](/mcp/tools/email) | `emails:read` |
+| `search_emails` | [Email](/mcp/tools/email) | `emails:read` |
+| `get_email_thread` | [Email](/mcp/tools/email) | `emails:read` |
+| `check_geo_eligibility` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `suggest_control_markets` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `list_geo_experiments` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `get_geo_experiment` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `get_geo_launch_plan` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `validate_geo_experiment` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `get_incrementality_coefficients` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `get_coefficient_history` | [Incrementality](/mcp/tools/incrementality) | `incrementality:read` |
+| `diagnose_funnel` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:read` |
+| `audit_funnel_tracking` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:read` |
+| `list_funnel_events` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:read` |
+| `analyze_funnel` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:read` |
+| `get_funnel_benchmarks` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:read` |
+| `set_funnel_benchmark` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:write` |
+| `clear_funnel_benchmark` | [Funnel constraints](/mcp/tools/funnel-constraints) | `constraints:write` |

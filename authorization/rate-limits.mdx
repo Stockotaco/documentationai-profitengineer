@@ -1,0 +1,53 @@
+---
+title: "Rate limits"
+description: "The per-key request limit, the headers that report it, and how to handle a 429."
+---
+
+Requests are limited per key, per minute, on a sliding window. The default is **60
+requests per minute**; your agency can raise it for a specific key.
+
+A sliding window means the limit is measured against the trailing minute, not a clock
+minute that resets on the hour. Sixty requests at once leaves you with none until those
+requests age out.
+
+## Headers
+
+Every authenticated response carries your current standing:
+
+| Header | Meaning |
+|--------|---------|
+| `X-RateLimit-Limit` | Your key's limit per minute |
+| `X-RateLimit-Remaining` | Requests left in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window frees up |
+
+Read `X-RateLimit-Remaining` on responses you already receive rather than polling for
+your limit — it's free, and it's current.
+
+## When you exceed it
+
+```json
+{
+  "error": "Rate limit exceeded",
+  "message": "You have exceeded the rate limit of 60 requests per minute",
+  "retryAfter": 42
+}
+```
+
+The response status is `429` and `retryAfter` is seconds to wait. Sleep for that long
+and retry — don't retry immediately, which just consumes the next window.
+
+<Callout kind="tip">
+  In a batch job, add a small delay between calls rather than firing everything at once
+  and handling the 429s. Staying under the limit is faster than recovering from it.
+</Callout>
+
+## What counts
+
+Every authenticated request to the REST API or the MCP endpoint counts once. One MCP
+tool call is one request, however long the tool runs. Sign-ins are limited **per person**
+rather than per key, so one person's heavy session can't exhaust a colleague's budget.
+
+## What isn't limited
+
+Portal sessions in your browser aren't rate limited — the limit applies to API keys and
+sign-ins.

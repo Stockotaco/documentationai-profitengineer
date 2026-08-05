@@ -1,0 +1,27 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Slack conversations"
+description: "Read ingested Slack channels by person, recency, and thread. Read-only."
+---
+
+<Callout kind="info">
+  Structured access to ingested Slack conversations (by person, recency, and thread). Slack also surfaces in search_knowledge under the same scope.
+</Callout>
+
+## list_slack_people
+
+Scope `slack:read` — you can grant this on a key you create yourself.
+
+List the people who have posted in this client's ingested Slack channels, with message counts, the channels they post in, and when they were last active. Use this to discover who's involved before asking about a specific person.
+
+## get_slack_messages
+
+Scope `slack:read` — you can grant this on a key you create yourself.
+
+Fetch this client's ingested Slack messages as structured, time-ordered rows. By default returns a recency feed (newest first) filtered by person/channel/date. Pass thread_ts to instead read a COMPLETE thread (every participant, oldest→newest) — do this when a result has a thread_ts and you need the full story, not just one message. Unlike search_knowledge this preserves who said what when — use it for 'what did X say recently', 'latest in #channel', or following a thread.
+
+## get_transcript
+
+Scope `slack:read` — you can grant this on a key you create yourself.
+
+Fetch the FULL transcript of a linked video (e.g. a Loom) that was shared in a Slack message. Pass the Loom URL, its 32-char id, or the `source_id` ("loom:&lt;id&gt;") from a get_slack_messages `links` entry whose transcript_available is true. Use this to actually read what a shared Loom says — search_knowledge only returns short ranked excerpts and, for a video, may miss the transcript entirely.

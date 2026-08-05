@@ -1,0 +1,57 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Metrics"
+description: "Your governed metric definitions, their targets, and their resolved values."
+---
+
+<Callout kind="info">
+  Metrics are the source of truth. Resolve a governed metric with `get_metric_value` rather than re-deriving the number yourself — that is what makes two people asking the same question get the same answer.
+</Callout>
+
+## list_metrics
+
+Scope `metrics:read` — you can grant this on a key you create yourself.
+
+List this client's metrics & targets. Each includes the current-period target vs actual and status. Pass 'year' to include the derived fiscal-year grid (FY/quarter/month rollups).
+
+## get_metric
+
+Scope `metrics:read` — you can grant this on a key you create yourself.
+
+Get one metric with its source-grain periods, current-period summary, and (with 'year') the derived fiscal-year grid.
+
+## get_metric_value
+
+Scope `metrics:read` — you can grant this on a key you create yourself.
+
+Resolve a metric's value for a period by running the metric's OWN governed query — the shared, versioned definition. Use this instead of writing your own BigQuery SQL for a number a metric already covers: it is what makes everyone asking the same question get the same answer. Returns the value, the period's target, status, and the definition to cite — plus a per-slice 'breakdown' ('breakdown_by' names the dimension) when the metric is defined with one, so a metric BY channel/pipeline/funnel needs no second call. Never add the breakdown rows up: 'value' is the only valid total. A metric with no governed query answers with source 'stored_actual' — report that rather than substituting your own SQL.
+
+## create_metric
+
+Scope `metrics:write` — your agency grants this one.
+
+Create a metric for this client. Targets/actuals are entered per period at the chosen source_grain.
+
+## update_metric
+
+Scope `metrics:write` — your agency grants this one.
+
+Update fields of an existing metric, and/or set which reports it appears on via report_ids.
+
+## delete_metric
+
+Scope `metrics:write` — your agency grants this one.
+
+Delete a metric and all its periods.
+
+## set_metric_target
+
+Scope `metrics:write` — your agency grants this one.
+
+Set the target and/or actual for one period of a metric. The period label must match the metric's source grain (e.g. '2026-07' monthly, '2026-Q3' quarterly, '2026' annual).
+
+## delete_metric_period
+
+Scope `metrics:write` — your agency grants this one.
+
+Remove a period's target/actual from a metric.

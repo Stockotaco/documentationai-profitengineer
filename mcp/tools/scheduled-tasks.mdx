@@ -1,0 +1,81 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Scheduled tasks"
+description: "Cron-based AI tasks that draft proposals for a human to review."
+---
+
+<Callout kind="info">
+  Cron-based AI tasks that draft proposals for human review. Approving a proposal needs task_proposals:write, separate from tasks:write, since it can send a real Slack message or discussion reply.
+</Callout>
+
+## list_tasks
+
+Scope `tasks:read` — you can grant this on a key you create yourself.
+
+List this client's scheduled tasks (cron-based AI tasks), with run count and total spend, newest first.
+
+## get_task
+
+Scope `tasks:read` — you can grant this on a key you create yourself.
+
+Get a single scheduled task by ID.
+
+## list_task_runs
+
+Scope `tasks:read` — you can grant this on a key you create yourself.
+
+List a scheduled task's run history (newest first), including each run's proposals.
+
+## get_task_run
+
+Scope `tasks:read` — you can grant this on a key you create yourself.
+
+Get a single scheduled-task run, including its proposals array (kind/title/body/status per proposal) — inspect before approving/dismissing.
+
+## create_task
+
+Scope `tasks:write` — you can grant this on a key you create yourself.
+
+Create a new scheduled task: a cron-based job that can run deterministic `commands` (fixed tool calls) and/or an AI `instruction` that drafts proposals for human review. Provide `instruction`, `commands`, or both.
+
+## update_task
+
+Scope `tasks:write` — you can grant this on a key you create yourself.
+
+Update fields of an existing scheduled task. Only pass the fields you want to change. Use set_task_status to pause/resume.
+
+## delete_task
+
+Scope `tasks:write` — you can grant this on a key you create yourself.
+
+Delete a scheduled task (its run history is removed too).
+
+## set_task_status
+
+Scope `tasks:write` — you can grant this on a key you create yourself.
+
+Pause or resume a scheduled task.
+
+## run_task_now
+
+Scope `tasks:write` — you can grant this on a key you create yourself.
+
+Enqueue an immediate run of a scheduled task.
+
+## approve_task_proposal
+
+Scope `task_proposals:write` — your agency grants this one.
+
+Approve one proposal from a task run — sends the drafted Slack message / discussion reply, or just records the decision for 'report'/'note' proposals. Optionally edit the body before sending.
+
+## dismiss_task_proposal
+
+Scope `task_proposals:write` — your agency grants this one.
+
+Dismiss one proposal (proposal_index) or, if omitted, every pending proposal in the run.
+
+## restore_task_proposal
+
+Scope `task_proposals:write` — your agency grants this one.
+
+Undo a dismissal (dismissed → pending) for one proposal (proposal_index) or, if omitted, every dismissed proposal in the run. Approved proposals can't be restored.

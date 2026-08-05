@@ -1,0 +1,39 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Prompts"
+description: "Your reusable prompt library — an agent can point at one as its system prompt."
+---
+
+<Callout kind="info">
+  The client's reusable prompt-library entries (agents can point at one as their system prompt).
+</Callout>
+
+## list_agent_prompts
+
+Scope `prompts:read` — you can grant this on a key you create yourself.
+
+List this client's reusable prompt-library entries (Handlebars-templated snippets agents can use as their system prompt), by name.
+
+## get_agent_prompt
+
+Scope `prompts:read` — you can grant this on a key you create yourself.
+
+Get a single prompt-library entry by id, including its full content.
+
+## create_agent_prompt
+
+Scope `prompts:write` — your agency grants this one.
+
+Create a new prompt-library entry for this client. Content may reference &#123;&#123;variables&#125;&#125; (Handlebars-lite) filled in when an agent using it runs.
+
+## update_agent_prompt
+
+Scope `prompts:write` — your agency grants this one.
+
+Update fields of an existing prompt-library entry. Only pass the fields you want to change.
+
+## delete_agent_prompt
+
+Scope `prompts:write` — your agency grants this one.
+
+Delete a prompt-library entry by id. Fails if any agent still references it as its system prompt.

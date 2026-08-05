@@ -1,0 +1,51 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Funnel constraints"
+description: "Find which step of your paid funnel a campaign is stuck on."
+---
+
+<Callout kind="info">
+  Which step of the paid funnel a campaign is stuck on — the ad, the tracking, the landing page, or the sale. Start with diagnose_funnel: it self-configures its conversion event and refuses to present a funnel it can't trust. Writes only store the benchmark targets the funnel is judged against.
+</Callout>
+
+## diagnose_funnel
+
+Scope `constraints:read` — you can grant this on a key you create yourself.
+
+START HERE for any 'why isn't this client's paid media working' question. Follows the paid funnel (impressions → clicks → sessions → leads → conversions) and returns a ranked list of what to fix, each with what it means and what to do about it. Self-configuring: with no conversion_event it inventories the client's events and picks the best pairing, reporting which it used. CRITICALLY, it trust-gates on tracking — when too few ad clicks resolve to a synced campaign it says so and attaches the tracking audit instead of handing back a funnel that is really measuring UTM hygiene. Read `brief.headline` first, then `brief.findings` in order (they are ranked by recoverable conversions, NOT by worst percentage — a 5× shortfall on 1,000 impressions is a rounding error). `brief.scale` lists rows with nothing to fix: budget candidates, not optimisation candidates.
+
+## audit_funnel_tracking
+
+Scope `constraints:read` — you can grant this on a key you create yourself.
+
+Tracking hygiene per campaign: which campaigns are measurable at all, and where the untracked ad clicks went. Use this whenever diagnose_funnel reports the tracking step or a low match rate. Lead with `totals.flagged_spend` — that is the spend whose effect cannot be measured. Verdicts worst-first: no_sessions, low_tracking, name_only (matching on campaign name, breaks silently at the next rename), no_clicks (no delivery — NOT a fault), ok. Untracked clicks are bucketed by cause because each is a different repair: no_utm, unexpanded_macro, unknown_campaign. NOTE: no_sessions is not automatically a bug — an on-platform objective (lead form, messaging) never sends anyone to the site, so zero sessions is the correct reading for it. Check the objective before hunting for a missing pixel. Meta only. No volume floor, unlike the analysis.
+
+## list_funnel_events
+
+Scope `constraints:read` — you can grant this on a key you create yourself.
+
+Which of this client's events can serve as the conversion or lead step, with volume, session coverage, person coverage, and which JSON paths carry money. Call this when diagnose_funnel couldn't pick an event, or to override its choice. A session-less event is NOT unusable — CRM/webhook conversions (GoHighLevel, Stripe) never touch the browser and are credited through the person instead; `usable:false` means neither a session nor a person, so nothing can attach it to a campaign. A lead_event is held to a stricter standard: the landing step is measured per session, so a session-less lead event would report a landing rate of zero and blame the page.
+
+## analyze_funnel
+
+Scope `constraints:read` — you can grant this on a key you create yourself.
+
+The raw Constraint Finder response, with every knob exposed and no trust gate, ranking, or auto-configuration applied. Prefer diagnose_funnel — it wraps this and adds the parts that stop the output being misread. Reach for this only when you need the untransformed rows or a per-step benchmark override for a single what-if. ALWAYS read `tracking.match_rate` before anything else in the response.
+
+## get_funnel_benchmarks
+
+Scope `constraints:read` — you can grant this on a key you create yourself.
+
+The standing benchmark targets stored for this client — account-wide defaults and any per-campaign overrides, with the note recorded against each. Without a stored target a step is judged against the account's own pooled rate, so these are what turn 'below your own average' into 'below what we promised'.
+
+## set_funnel_benchmark
+
+Scope `constraints:write` — your agency grants this one.
+
+Store a standing target the funnel is judged against, account-wide or for one campaign. Rates, not percentages: a 2% CTR is 0.02, and anything above 1 is rejected. THIS REPLACES THE WHOLE SCOPE — any step you omit falls back to the account's pooled rate rather than keeping its previous stored value, so always send the complete set for that scope. Prefer a campaign id over a name: a name-matched target silently stops matching the next time the campaign is renamed.
+
+## clear_funnel_benchmark
+
+Scope `constraints:write` — your agency grants this one.
+
+Remove stored benchmark targets, returning those steps to the account's own pooled rate. Pass `step` to clear one step across scopes, `campaign` to clear that campaign's scope, or neither to clear the account-wide default.

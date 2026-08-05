@@ -1,0 +1,70 @@
+---
+generated: "scripts/gen-tool-pages.mjs — do not edit by hand"
+title: "Scopes"
+description: "Every scope a client key can hold, what it unlocks, and who can grant it."
+---
+
+A key carries a list of scopes. A call that needs a scope the key doesn't hold
+returns `403` with the missing scope named, so you never have to guess.
+
+The **Granted by** column says whether you can add the scope to a key you create
+yourself, or whether your agency has to add it for you. See
+[Self-serve vs agency-granted](/authorization/self-serve-vs-staff) for why the line
+falls where it does.
+
+## Scope reference
+
+| Scope | Granted by | Tools it unlocks |
+|-------|-----------|------------------|
+| *none* | Always on | `get_client_context`, `get_glossary`, `list_reports`, `list_tables`, `get_discussions`, `list_alerts`, `list_models` |
+| `alerts:read` | You | `list_alert_rules`, `get_alert`, `get_alert_history`, `preview_alert_query` |
+| `alerts:write` | Your agency | `create_alert`, `update_alert`, `delete_alert`, `set_alert_status`, `trigger_alert`, `add_alert_action`, `update_alert_action`, `delete_alert_action` |
+| `constraints:read` | You | `diagnose_funnel`, `audit_funnel_tracking`, `list_funnel_events`, `analyze_funnel`, `get_funnel_benchmarks` |
+| `constraints:write` | Your agency | `set_funnel_benchmark`, `clear_funnel_benchmark` |
+| `discussions:write` | You | `create_discussion`, `reply_to_discussion`, `update_discussion`, `set_discussion_status`, `delete_discussion` |
+| `documents:read` | You | `list_documents`, `get_document`, `search_knowledge` |
+| `documents:write` | You | `create_document`, `update_document`, `delete_document` |
+| `emails:read` | You | `list_email_threads`, `list_emails`, `search_emails`, `get_email_thread` |
+| `glossary:write` | Your agency | `create_glossary_term`, `update_glossary_term`, `delete_glossary_term`, `set_glossary_override`, `remove_glossary_override` |
+| `incrementality:read` | You | `check_geo_eligibility`, `suggest_control_markets`, `list_geo_experiments`, `get_geo_experiment`, `get_geo_launch_plan`, `validate_geo_experiment`, `get_incrementality_coefficients`, `get_coefficient_history` |
+| `memories:read` | You | `list_memories`, `get_memory`, `search_memories` |
+| `memories:write` | You | `create_memory`, `update_memory`, `delete_memory` |
+| `metrics:read` | You | `list_metrics`, `get_metric`, `get_metric_value` |
+| `metrics:write` | Your agency | `create_metric`, `update_metric`, `delete_metric`, `set_metric_target`, `delete_metric_period` |
+| `prompts:read` | You | `list_agent_prompts`, `get_agent_prompt` |
+| `prompts:write` | Your agency | `create_agent_prompt`, `update_agent_prompt`, `delete_agent_prompt` |
+| `reports:read` | You | `list_components`, `get_client_schema`, `validate_query` |
+| `reports:write` | Your agency | `create_report`, `update_report`, `delete_report`, `save_report` |
+| `skills:read` | You | `list_skills`, `get_skill` |
+| `skills:write` | Your agency | `create_skill`, `update_skill`, `delete_skill` |
+| `slack:read` | You | `list_slack_people`, `get_slack_messages`, `get_transcript` |
+| `task_proposals:write` | Your agency | `approve_task_proposal`, `dismiss_task_proposal`, `restore_task_proposal` |
+| `tasks:read` | You | `list_tasks`, `get_task`, `list_task_runs`, `get_task_run` |
+| `tasks:write` | You | `create_task`, `update_task`, `delete_task`, `set_task_status`, `run_task_now` |
+| `web:read` | You | `fetch_page`, `scrape_page_elements`, `extract_page_data` |
+
+## Warehouse scopes
+
+Your BigQuery and PostHog tools come from servers your agency connects for you, so
+they aren't in the table above and their tool names depend on that connection. Your
+agency grants all of them.
+
+| Scope | Unlocks |
+|-------|---------|
+| `bigquery:projects:read` | List and read BigQuery projects |
+| `bigquery:datasets:read` / `:write` | Read datasets; create and delete them |
+| `bigquery:tables:read` / `:write` | Read table schemas; create and delete tables |
+| `bigquery:rows:write` | Insert rows |
+| `bigquery:query:read` / `:write` | Dry-run and inspect jobs; execute queries |
+| `posthog:dashboards:read` / `:write` | Read dashboards and insights; create and edit them |
+| `posthog:queries:read` / `:write` | Run HogQL queries and read definitions; save queries |
+| `posthog:feature-flags:read` / `:write` | Read feature flags; create and edit them |
+| `posthog:surveys:read` / `:write` | Read surveys; create and edit them |
+| `posthog:actions:read` / `:write` | Read actions; create and edit them |
+| `mcp:read` / `mcp:write` | Call tools on MCP servers you connected yourself |
+
+<Callout kind="alert">
+  `mcp:read` and `mcp:write` are decided per tool from the server's own
+  annotations, and they fail closed: a tool that doesn't declare itself read-only
+  needs `mcp:write`, because an unvetted server's effects are unknown.
+</Callout>
