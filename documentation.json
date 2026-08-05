@@ -78,7 +78,24 @@
             ]
           },
           {
-            "group": "MCP Tools",
+            "group": "Advanced",
+            "icon": "settings",
+            "pages": [
+              {
+                "title": "Integrations",
+                "path": "integrations",
+                "icon": "plug"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "MCP",
+        "icon": "wrench",
+        "pages": [
+          {
+            "group": "Tools",
             "icon": "wrench",
             "pages": [
               {
@@ -165,17 +182,6 @@
                 "title": "Incrementality",
                 "path": "mcp/tools/incrementality",
                 "icon": "trending-up"
-              }
-            ]
-          },
-          {
-            "group": "Advanced",
-            "icon": "settings",
-            "pages": [
-              {
-                "title": "Integrations",
-                "path": "integrations",
-                "icon": "plug"
               }
             ]
           }
