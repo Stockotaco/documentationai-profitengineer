@@ -44,6 +44,21 @@ components:
       schema:
         type: string
       description: Chat session id (globally unique).
+    SkillsClientIdHeader:
+      name: X-Client-Id
+      in: header
+      required: false
+      description: Required for agency-wide API keys, the target client's id, slug, or name. Ignored for
+        client-scoped keys, which derive the client from the key.
+      schema:
+        type: string
+    SkillsIdPath:
+      name: id
+      in: path
+      required: true
+      description: The skill id.
+      schema:
+        type: string
   responses:
     EmailsForbidden:
       description: 'Permission denied: the key lacks the `emails:read` scope, cannot access the target
@@ -108,6 +123,37 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ReportsError'
+    SkillsBadRequest:
+      description: Validation failed, or the skill core rejected the write.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SkillsError'
+    SkillsForbidden:
+      description: The key lacks the required scope, its user is deactivated, or an agency-wide key did
+        not resolve a target client.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SkillsError'
+    SkillsNotFound:
+      description: Skill not found in this client's scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SkillsError'
+    SkillsRateLimited:
+      description: Rate limit exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SkillsError'
+    SkillsUnauthorized:
+      description: Missing, invalid, expired, or unresolvable API key.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SkillsError'
   schemas:
     EmailsAuthError:
       type: object
@@ -467,6 +513,145 @@ components:
       properties:
         success:
           type: boolean
+    SkillsConfig:
+      type: object
+      nullable: true
+      description: The stored skill config, parsed from JSON.
+      properties:
+        toolIds:
+          type: array
+          items:
+            type: string
+        mcpServerIds:
+          type: array
+          items:
+            type: string
+        builtinNames:
+          type: array
+          items:
+            type: string
+        subAgentId:
+          type: string
+          nullable: true
+        files:
+          type: array
+          description: Reference documents attached to the skill, at most 10.
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+                description: A flat filename, no directories.
+              documentId:
+                type: string
+            required:
+            - path
+            - documentId
+        surfaces:
+          type: array
+          description: Where the skill may load. Absent means both.
+          items:
+            type: string
+            enum:
+            - portal
+            - mcp
+    SkillsConfigInput:
+      type: object
+      nullable: true
+      description: Tool references a skill activates when loaded. Only the fields validated by the route's
+        Zod schema are listed here, the shared skill core also accepts `files` and `surfaces`.
+      properties:
+        toolIds:
+          type: array
+          items:
+            type: string
+        mcpServerIds:
+          type: array
+          items:
+            type: string
+        builtinNames:
+          type: array
+          items:
+            type: string
+        subAgentId:
+          type: string
+          nullable: true
+    SkillsError:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        retryAfter:
+          type: integer
+          description: Present on rate-limit responses, seconds until the window resets.
+      required:
+      - error
+    SkillsLibrarySkill:
+      allOf:
+      - $ref: '#/components/schemas/SkillsSkillWithScope'
+      - type: object
+        properties:
+          shadowed:
+            type: boolean
+            description: True when a fork in a more specific tier hides this skill.
+        required:
+        - shadowed
+    SkillsSkill:
+      type: object
+      properties:
+        id:
+          type: string
+        agencyId:
+          type: string
+          nullable: true
+        clientId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        slug:
+          type: string
+          description: Derived from the name, and the `skill://<slug>/...` URI segment.
+        description:
+          type: string
+        content:
+          type: string
+          nullable: true
+        config:
+          $ref: '#/components/schemas/SkillsConfig'
+        isEnabled:
+          type: boolean
+        forkedFromSkillId:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - slug
+      - description
+      - isEnabled
+    SkillsSkillWithScope:
+      allOf:
+      - $ref: '#/components/schemas/SkillsSkill'
+      - type: object
+        properties:
+          scope:
+            type: string
+            enum:
+            - client
+            - agency
+            - platform
+          editable:
+            type: boolean
+            description: True when the skill is owned by this client.
+        required:
+        - scope
+        - editable
   securitySchemes:
     bearerAuth:
       type: http
@@ -12717,122 +12902,50 @@ paths:
   /v1/skills:
     get:
       operationId: listSkills
+      summary: List the skill library visible to this client
+      description: 'Returns the cascaded skill library the authenticated key''s client can see: platform
+        skills, its agency''s skills (read-only, customizable via fork), and its own. Each row carries
+        `scope`, `editable`, and `shadowed`. Required scope, any of, "skills:read" or "skills:write".'
       tags:
       - skills
-      summary: List the client's visible skill library
-      description: 'Returns the skill library the authenticated key''s client can see: platform
-
-        skills, its agency''s skills, and its own, each row annotated with `scope`,
-
-        `editable`, and `shadowed`. Ordered by name.
-
-
-        Required scope: `skills:read` OR `skills:write` (requireAnyScope).
-
-        Auth: API key (`Authorization: Bearer secret_xxx`). Agency-wide keys must
-
-        also send `X-Client-Id`.
-
-        '
       parameters:
-      - name: X-Client-Id
-        in: header
-        required: false
-        description: Target client id, slug, or name. Required for agency-wide API keys; ignored for client-scoped
-          keys.
-        schema:
-          type: string
+      - $ref: '#/components/parameters/SkillsClientIdHeader'
       responses:
         '200':
-          description: The visible skill library
+          description: The skill library
           content:
             application/json:
               schema:
                 type: object
-                required:
-                - skills
                 properties:
                   skills:
                     type: array
                     items:
-                      allOf:
-                      - $ref: '#/x-schemas/Skill'
-                      - type: object
-                        properties:
-                          scope:
-                            type: string
-                            enum:
-                            - client
-                            - agency
-                            - platform
-                          editable:
-                            type: boolean
-                            description: True when the row is owned by this client.
-                          shadowed:
-                            type: boolean
-                            description: True when a fork owned by this client (or its agency) hides this
-                              row.
-        '400':
-          description: Agency-wide key did not resolve a target client
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+                      $ref: '#/components/schemas/SkillsLibrarySkill'
+                required:
+                - skills
         '401':
-          description: Missing, malformed, revoked, or expired API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsUnauthorized'
         '403':
-          description: 'Permission denied: key lacks skills:read and skills:write'
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsForbidden'
         '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/RateLimitError'
+          $ref: '#/components/responses/SkillsRateLimited'
     post:
       operationId: createSkill
+      summary: Create a client-owned skill
+      description: Creates a skill owned by the authenticated key's client. Passing `forkedFromSkillId`
+        records a copy-on-write fork of an inherited (platform or agency) skill, which keeps the source's
+        slug and shadows it in the library. Required scope, "skills:write".
       tags:
       - skills
-      summary: Create a client-owned skill
-      description: 'Creates a skill owned by the authenticated key''s client. Passing
-
-        `forkedFromSkillId` records a copy-on-write fork of an inherited
-
-        (platform/agency) skill: the fork keeps the source''s slug and shadows it
-
-        in the library. Slug is derived from `name` and must be unique among this
-
-        client''s own skills.
-
-
-        Required scope: `skills:write` (requireScope).
-
-        Auth: API key. Agency-wide keys must also send `X-Client-Id`.
-
-        '
       parameters:
-      - name: X-Client-Id
-        in: header
-        required: false
-        description: Target client id, slug, or name. Required for agency-wide API keys.
-        schema:
-          type: string
+      - $ref: '#/components/parameters/SkillsClientIdHeader'
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:
-              - name
-              - description
               properties:
                 name:
                   type: string
@@ -12840,88 +12953,55 @@ paths:
                 description:
                   type: string
                   minLength: 1
-                  description: Should say WHEN to use the skill; a description without a trigger phrase
-                    is accepted but discouraged.
+                  description: Say WHEN to reach for the skill, this is all an agent sees before deciding
+                    to load it.
                 content:
                   type: string
                   nullable: true
-                  description: The skill body (SKILL.md).
+                  description: The skill body, served as SKILL.md.
                 config:
-                  $ref: '#/x-schemas/SkillConfigInput'
+                  $ref: '#/components/schemas/SkillsConfigInput'
                 isEnabled:
                   type: boolean
-                  default: true
                 forkedFromSkillId:
                   type: string
                   nullable: true
-                  description: Id of an in-scope, non-client-owned skill to fork (copy-on-write).
+                  description: An inherited (non-client, in-scope) skill to fork. The new skill keeps
+                    that skill's slug.
+              required:
+              - name
+              - description
       responses:
         '201':
-          description: Skill created
+          description: The created skill
           content:
             application/json:
               schema:
                 type: object
-                required:
-                - skill
                 properties:
                   skill:
-                    $ref: '#/x-schemas/Skill'
+                    $ref: '#/components/schemas/SkillsSkill'
+                required:
+                - skill
         '400':
-          description: Validation failure thrown by the skill core (missing name/description, bad `config`,
-            slug clash, fork source not found), or an agency-wide key with no resolvable target client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsBadRequest'
         '401':
-          description: Missing, malformed, revoked, or expired API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsUnauthorized'
         '403':
-          description: 'Permission denied: key lacks skills:write'
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsForbidden'
         '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/RateLimitError'
+          $ref: '#/components/responses/SkillsRateLimited'
   /v1/skills/{id}:
-    parameters:
-    - name: id
-      in: path
-      required: true
-      description: Skill id.
-      schema:
-        type: string
-    - name: X-Client-Id
-      in: header
-      required: false
-      description: Target client id, slug, or name. Required for agency-wide API keys; ignored for client-scoped
-        keys.
-      schema:
-        type: string
     get:
       operationId: getSkill
+      summary: Get one in-scope skill
+      description: Returns a single skill the client can see, whether client-owned or inherited from its
+        agency or the platform. Required scope, any of, "skills:read" or "skills:write".
       tags:
       - skills
-      summary: Get one in-scope skill
-      description: 'Returns a single skill visible to this client (its own, or an inherited
-
-        agency/platform skill), annotated with `scope` and `editable`.
-
-
-        Required scope: `skills:read` OR `skills:write` (requireAnyScope).
-
-        Auth: API key. Agency-wide keys must also send `X-Client-Id`.
-
-        '
+      parameters:
+      - $ref: '#/components/parameters/SkillsIdPath'
+      - $ref: '#/components/parameters/SkillsClientIdHeader'
       responses:
         '200':
           description: The skill
@@ -12929,73 +13009,30 @@ paths:
             application/json:
               schema:
                 type: object
-                required:
-                - skill
                 properties:
                   skill:
-                    allOf:
-                    - $ref: '#/x-schemas/Skill'
-                    - type: object
-                      properties:
-                        scope:
-                          type: string
-                          enum:
-                          - client
-                          - agency
-                          - platform
-                        editable:
-                          type: boolean
-        '400':
-          description: Agency-wide key did not resolve a target client
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+                    $ref: '#/components/schemas/SkillsSkillWithScope'
+                required:
+                - skill
         '401':
-          description: Missing, malformed, revoked, or expired API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsUnauthorized'
         '403':
-          description: 'Permission denied: key lacks skills:read and skills:write'
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsForbidden'
         '404':
-          description: Skill not found or not in scope for this client
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/NotFoundError'
+          $ref: '#/components/responses/SkillsNotFound'
         '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/RateLimitError'
+          $ref: '#/components/responses/SkillsRateLimited'
     patch:
       operationId: updateSkill
+      summary: Update a client-owned skill
+      description: Sparse-patches name, description, content, config, or isEnabled on a skill owned by
+        this client. Inherited skills are not editable, fork them first. Renaming a non-fork re-derives
+        its slug. Required scope, "skills:write".
       tags:
       - skills
-      summary: Update a client-owned skill
-      description: 'Sparse patch of a skill owned by the authenticated key''s client. Inherited
-
-        platform/agency skills cannot be patched (they resolve to 404 here — fork
-
-        them with POST /v1/skills instead). Renaming a non-fork re-derives its
-
-        slug; a fork keeps its source''s slug. On success the agent cache is
-
-        invalidated so edits take effect immediately.
-
-
-        Required scope: `skills:write` (requireScope).
-
-        Auth: API key. Agency-wide keys must also send `X-Client-Id`.
-
-        '
+      parameters:
+      - $ref: '#/components/parameters/SkillsIdPath'
+      - $ref: '#/components/parameters/SkillsClientIdHeader'
       requestBody:
         required: true
         content:
@@ -13013,115 +13050,64 @@ paths:
                   type: string
                   nullable: true
                 config:
-                  $ref: '#/x-schemas/SkillConfigInput'
+                  $ref: '#/components/schemas/SkillsConfigInput'
                 isEnabled:
                   type: boolean
       responses:
         '200':
-          description: Skill updated
+          description: The updated skill
           content:
             application/json:
               schema:
                 type: object
-                required:
-                - skill
                 properties:
                   skill:
-                    $ref: '#/x-schemas/Skill'
+                    $ref: '#/components/schemas/SkillsSkill'
+                required:
+                - skill
         '400':
-          description: Validation failure thrown by the skill core (empty name/description, bad `config`,
-            slug clash), a zod body validation error, or an agency-wide key with no resolvable target
-            client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsBadRequest'
         '401':
-          description: Missing, malformed, revoked, or expired API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsUnauthorized'
         '403':
-          description: 'Permission denied: key lacks skills:write'
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsForbidden'
         '404':
-          description: Skill not found among this client's own skills
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/NotFoundError'
+          $ref: '#/components/responses/SkillsNotFound'
         '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/RateLimitError'
+          $ref: '#/components/responses/SkillsRateLimited'
     delete:
       operationId: deleteSkill
+      summary: Delete a client-owned skill
+      description: Deletes a skill owned by this client. Equipped agents detach via the agent_skills cascade.
+        Required scope, "skills:write".
       tags:
       - skills
-      summary: Delete a client-owned skill
-      description: 'Deletes a skill owned by the authenticated key''s client. Equipped agents
-
-        detach via the agent_skills cascade; there is no reference guard. On
-
-        success the agent cache is invalidated.
-
-
-        Required scope: `skills:write` (requireScope).
-
-        Auth: API key. Agency-wide keys must also send `X-Client-Id`.
-
-        '
+      parameters:
+      - $ref: '#/components/parameters/SkillsIdPath'
+      - $ref: '#/components/parameters/SkillsClientIdHeader'
       responses:
         '200':
-          description: Skill deleted
+          description: The skill was deleted
           content:
             application/json:
               schema:
                 type: object
-                required:
-                - success
                 properties:
                   success:
                     type: boolean
-                    enum:
-                    - true
+                    example: true
+                required:
+                - success
         '400':
-          description: Delete failed in the skill core, or an agency-wide key with no resolvable target
-            client.
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsBadRequest'
         '401':
-          description: Missing, malformed, revoked, or expired API key
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsUnauthorized'
         '403':
-          description: 'Permission denied: key lacks skills:write'
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/Error'
+          $ref: '#/components/responses/SkillsForbidden'
         '404':
-          description: Skill not found among this client's own skills
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/NotFoundError'
+          $ref: '#/components/responses/SkillsNotFound'
         '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                $ref: '#/x-schemas/RateLimitError'
+          $ref: '#/components/responses/SkillsRateLimited'
   /v1/web/extract:
     post:
       operationId: extractWebPageData
