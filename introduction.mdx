@@ -1,42 +1,55 @@
 ---
-title: Introduction to Profit Engineer
-description: Landing page with an overview of Profit Engineer (Mythic OS), its key features, benefits for marketing data analysis, and quick navigation to other docs.
+title: Introduction
+description: What Profit Engineer is, what these docs cover, and where to start depending on whether you are connecting an AI assistant or writing code.
 ---
 
-<Image
-  src="https://blob-cdn.documentation.ai/org-2ebb2ef5-dd91-493f-9938-283fbdb14c81/doc-d2a73d2e-4391-4446-a5c8-2d0b41b7c4c1/1774416420393-s9t4cno1w99-Image-8.png?q=85&fm=auto&auto=compress%2Cformat"
-  alt="Profit Engineer documentation"
-  width="800"
-  height="400"
-/>
+## What this is
 
-## Welcome to Profit Engineer
+Profit Engineer runs on Mythic OS. It turns your marketing and revenue data into
+governed metrics, reports, and alerts — and it exposes all of that to you directly, so
+you are not limited to what a dashboard happens to show.
 
-Your Profit Engineer: Mythic OS turns marketing numbers into clear action. This AI analyzes your ad spend daily, identifies profit drivers and leaks, and delivers one key action each week in plain English.
+These docs cover that programmatic surface. There are two ways in, and they reach the
+same system:
 
-<Columns cols={2}>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Set up Profit Engineer and connect your marketing data in minutes.
+<Columns cols="2">
+  <Card title="Connect an AI assistant" icon="plug" href="/mcp/connecting">
+    Point Claude Code, Claude Desktop, or any MCP client at your data. 103 tools, no
+    configuration file.
   </Card>
-  <Card title="Authentication" icon="lock" href="/authentication">
-    Securely link ad platforms like Meta and Google Ads.
-  </Card>
-  <Card title="Configuration" icon="settings" href="/configuration">
-    Customize Mythic OS for your business metrics and goals.
+  <Card title="Call the API" icon="code" href="/quickstart">
+    73 REST endpoints for scripts, scheduled jobs, and your own product.
   </Card>
 </Columns>
 
-## Explore Documentation
+## Start here
 
-<Columns cols={2}>
-  <Card title="Quickstart" icon="book-open" href="/quickstart" horizontal>
-    Follow the fast path to your first profit insights.
+<Columns cols="2">
+  <Card title="Quickstart" icon="rocket" href="/quickstart" horizontal>
+    Get access, get a credential, make your first call.
   </Card>
-  <Card title="Guides" icon="help-circle" href="/guides" horizontal>
-    Deep dives into advanced analysis and optimization.
+  <Card title="MCP overview" icon="info" href="/mcp/overview" horizontal>
+    What the tools cover and when to prefer them over REST.
+  </Card>
+  <Card title="Authorization" icon="lock" href="/authorization/api-keys" horizontal>
+    Keys, sign-in, scopes, and what each credential can reach.
+  </Card>
+  <Card title="All tools" icon="list" href="/mcp/tools/all-tools" horizontal>
+    Every MCP tool with the scope it needs.
   </Card>
 </Columns>
 
-<Callout kind="tip">
-  This documentation was generated as a starter kit. Customize the content to match your product.
+## The one thing worth reading first
+
+**Metrics are the source of truth.** A metric marked *governed* carries its own query,
+so resolving it returns the same number for everyone who asks. That is the point of
+having them: two people asking the same question should not get two answers.
+
+Anything that recomputes a figure with its own SQL has produced an ad-hoc number, not
+your metric. Both surfaces are built to resolve metrics rather than re-derive them, and
+it is worth insisting on that from anything you build.
+
+<Callout kind="info">
+  Access is provisioned by your agency — accounts arrive by invitation rather than
+  self-signup. If you do not have a sign-in yet, ask them.
 </Callout>

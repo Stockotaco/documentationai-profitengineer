@@ -6,29 +6,32 @@ description: "Create a key, send it with a request, and understand what a key ca
 An API key authenticates you to both surfaces: the MCP endpoint your AI tools connect
 to, and the REST API. One key, one set of permissions.
 
-## Create a key
+## Getting a key
+
+Keys are issued by your agency, not self-served. Ask them for one and say what it is
+for — they need two things from you:
 
 <Steps>
-  <Step title="Open the MCP tab in your portal">
-    Sign in to your portal and open **MCP** in the sidebar.
+  <Step title="Where it will run">
+    A name tied to the place it lives — `claude-code-laptop`, `reporting-cron` — so the
+    right one can be revoked later without breaking anything else.
   </Step>
-  <Step title="Create a key">
-    Name it after where it will run — `claude-code-laptop`, `reporting-cron` — so you
-    can revoke the right one later.
-  </Step>
-  <Step title="Choose its permissions">
-    Pick only the scopes that key needs. See [Scopes](/authorization/scopes) for what
-    each one unlocks.
-  </Step>
-  <Step title="Copy it now">
-    The full key is shown once, at creation, and never again.
+  <Step title="What it needs to do">
+    The narrowest set of scopes that works. See [Scopes](/authorization/scopes) for what
+    each one unlocks, and widen only when something actually fails.
   </Step>
 </Steps>
 
 <Callout kind="alert">
-  We store only a SHA-256 hash of your key, plus its first 16 characters so you can
-  recognise it in the portal. Lose the key and there is no recovery — create a new one
-  and delete the old.
+  The full key is shown once, at creation. Only a SHA-256 hash is stored, plus the first
+  16 characters so it can be recognised in a list. If it is lost there is no recovery —
+  it has to be replaced and the old one deleted.
+</Callout>
+
+<Callout kind="tip">
+  If you are a person using an AI tool rather than running a script, you may not need a
+  key at all. [Signing in](/authorization/oauth) is self-service, gives you a credential
+  of your own, and can be revoked without affecting anyone else.
 </Callout>
 
 ## Key format
