@@ -100,48 +100,17 @@ Configure alerts for metrics crossing your thresholds.
   </Step>
 </Steps>
 
-<CodeGroup tabs="JSON,Webhook">
-  ```json
-  {
-    "alerts": [
-      {
-        "metric": "cac",
-        "threshold": 50,
-        "operator": "gt",
-        "channel": "email"
-      }
-    ]
-  }
-  ```
-  ```javascript
-  // Webhook payload example
-  await fetch('https://your-webhook-url.com/alert', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      metric: 'cac',
-      value: 52,
-      action: 'review'
-    })
-  });
-  ```
-</CodeGroup>
+Alerts can also be created and managed programmatically. The request and response
+shapes live in one place rather than being restated here:
 
-<Expandable title="Advanced Metrics Configuration" default-open="false">
-  Integrate custom profit formulas via API.
-
-  <ParamField path="profit_formula" param-type="string" required="true">
-    JavaScript expression for custom calculations, e.g., `(revenue - costs) * margin`.
-  </ParamField>
-
-  Example API call to `https://api.example.com/v1/metrics`:
-
-  ```bash
-  curl -X POST https://api.example.com/v1/metrics \
-    -H "Authorization: Bearer YOUR_API_KEY" \
-    -d '{"profit_formula": "(revenue - ad_spend - ops_cost) * 0.3"}'
-  ```
-</Expandable>
+<Columns cols={2}>
+  <Card title="Alert endpoints" icon="code" href="/api-reference">
+    `POST /v1/alerts` and the rest of the alert surface, with every field and scope.
+  </Card>
+  <Card title="Alert tools" icon="zap" href="/mcp/tools/alerts">
+    The same capabilities as MCP tools, for use from an AI assistant.
+  </Card>
+</Columns>
 
 <Callout kind="info">
   Start with default metrics, then customize as your business scales.

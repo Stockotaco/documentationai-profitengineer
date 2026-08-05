@@ -76,17 +76,6 @@
                 "icon": "gauge"
               }
             ]
-          },
-          {
-            "group": "Advanced",
-            "icon": "settings",
-            "pages": [
-              {
-                "title": "Integrations",
-                "path": "integrations",
-                "icon": "plug"
-              }
-            ]
           }
         ]
       },
@@ -243,17 +232,6 @@
                 "icon": "book-open"
               }
             ]
-          }
-        ]
-      },
-      {
-        "tab": "Changelog",
-        "icon": "clock",
-        "pages": [
-          {
-            "title": "Release History",
-            "path": "changelog",
-            "icon": "history"
           }
         ]
       }
